@@ -1,0 +1,20 @@
+[package]
+name = "example-rust-package"
+version = "1.0.0"
+edition = "2021"
+authors = ["Example Author <author@example.com>"]
+description = "Example Rust package for testing package-bump-tag-commit"
+license = "MIT"
+repository = "https://github.com/example/example-rust-package"
+keywords = ["example", "rust", "package"]
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+tokio = { version = "1.0", features = ["full"] }
+
+[dev-dependencies]
+criterion = "0.5"
+
+[[bin]]
+name = "main"
+path = "src/main.rs"

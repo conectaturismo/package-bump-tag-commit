@@ -2,12 +2,18 @@ const core = require('@actions/core');
 const semver = require('semver');
 const github = require('@actions/github');
 const { join } = require('path');
+const { existsSync } = require('fs');
 
 const PackageVersion = require('./package-version');
 const GitCmd = require('./git-cmd');
 
-const enabledLangs = ['rust', 'js'];
-const defaultPAckages = { js: 'package.json', rust: 'Cargo.toml' };
+const enabledLangs = ['rust', 'js', 'php', 'python'];
+const defaultPAckages = { 
+  js: 'package.json', 
+  rust: 'Cargo.toml', 
+  php: 'composer.json', 
+  python: 'pyproject.toml' 
+};
 const enabledbumpLvls = ['major', 'minor', 'patch', 'hotfix', 'none'];
 
 const run = async () => {
@@ -16,7 +22,19 @@ const run = async () => {
     const workspacePath = process.env.GITHUB_WORKSPACE || './';
     const bumpLvl = core.getInput('bumpLvl') || 'patch';
 
-    const inputPath = core.getInput('path') || defaultPAckages[lang];
+    let inputPath = core.getInput('path') || defaultPAckages[lang];
+    
+    // For Python, if no path is specified, try to find the most appropriate file
+    if (lang === 'python' && !core.getInput('path')) {
+      const candidatePaths = ['pyproject.toml', 'setup.py', 'src/__init__.py', '__init__.py'];
+      for (const candidate of candidatePaths) {
+        const fullPath = join(workspacePath, candidate);
+        if (existsSync(fullPath)) {
+          inputPath = candidate;
+          break;
+        }
+      }
+    }
     const saveOper = core.getBooleanInput('save') || false;
     const ghToken = core.getInput('githubToken');
 

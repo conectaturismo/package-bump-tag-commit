@@ -1,12 +1,18 @@
 {
   "name": "package-bump-tag-commit",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Read version from package file, bump it, and create tag, commit",
   "author": "Sergio Garcia",
   "main": "index.js",
   "scripts": {
     "start": "nodemon index.js",
-    "build": "npx ncc build index.js --license licenses.txt"
+    "build": "npx ncc build index.js --license licenses.txt",
+    "test": "node test-integration.js",
+    "test:verbose": "node test-integration.js --verbose",
+    "test:php": "node test-integration.js --lang=php",
+    "test:python": "node test-integration.js --lang=python",
+    "test:js": "node test-integration.js --lang=js",
+    "test:rust": "node test-integration.js --lang=rust"
   },
   "license": "MIT",
   "dependencies": {
@@ -17,6 +23,7 @@
     "semver": "^7.6.2"
   },
   "devDependencies": {
+    "@vercel/ncc": "^0.38.4",
     "nodemon": "^3.1.2"
   }
 }

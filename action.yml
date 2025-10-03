@@ -3,7 +3,7 @@ description: 'Read version from package file, bump it, and create tag, commit'
 
 inputs:
   lang:
-    description: 'The type of programing language'
+    description: 'The type of programing language (js, rust, php, python)'
     required: false
     default: 'js'
   bumpLvl:

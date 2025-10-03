@@ -1,0 +1,32 @@
+{
+  "name": "example-js-package",
+  "version": "1.0.0",
+  "description": "Example JavaScript package for testing package-bump-tag-commit",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js"
+  },
+  "keywords": [
+    "example",
+    "javascript", 
+    "package",
+    "npm"
+  ],
+  "author": "Example Author <author@example.com>",
+  "license": "MIT",
+  "dependencies": {
+    "lodash": "^4.17.21"
+  },
+  "devDependencies": {
+    "jest": "^29.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/example/example-js-package.git"
+  },
+  "bugs": {
+    "url": "https://github.com/example/example-js-package/issues"
+  },
+  "homepage": "https://github.com/example/example-js-package#readme"
+}

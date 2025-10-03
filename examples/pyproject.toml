@@ -1,0 +1,15 @@
+[project]
+name = "example-python-package"
+version = "1.0.0"
+description = "Example Python package"
+authors = [
+    {name = "Example Author", email = "author@example.com"}
+]
+dependencies = [
+    "requests>=2.25.1"
+]
+requires-python = ">=3.8"
+
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
