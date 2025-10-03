@@ -36,15 +36,17 @@ npm run release:full
 ### 🔄 **Bump de Versión + Release Automático**
 
 ```bash
-# Bump patch (1.3.0 → 1.3.1) + release completo
+# Bump patch (1.3.1 → 1.3.2) + release completo
 npm run bump:patch
 
-# Bump minor (1.3.0 → 1.4.0) + release completo  
+# Bump minor (1.3.1 → 1.4.0) + release completo  
 npm run bump:minor
 
-# Bump major (1.3.0 → 2.0.0) + release completo
+# Bump major (1.3.1 → 2.0.0) + release completo
 npm run bump:major
 ```
+
+> **⚠️ Nota**: Los scripts `bump:*` automáticamente crean el tag con `npm version`, luego hacen push y ejecutan el release completo.
 
 ### 📝 **Solo Bump de Versión (sin release)**
 
@@ -90,11 +92,11 @@ npm run release:full
 
 | Script | Acción |
 |--------|---------|
-| `release:prepare` | Compila el proyecto y commitea `dist/` |
-| `release:tag` | Crea tag `vX.Y.Z` y lo sube a GitHub |
+| `release:prepare` | Compila el proyecto y commitea `dist/` si hay cambios |
+| `release:tag` | Sube el tag existente `vX.Y.Z` a GitHub |
 | `release:update-major` | Actualiza tag `v1` para apuntar a la última versión |
-| `bump:*` | Actualiza versión + release completo |
-| `version:*` | Solo actualiza versión en package.json |
+| `bump:*` | `npm version` + push + release completo |
+| `version:*` | Solo `npm version` (crea tag localmente) |
 
 ## 🔄 **Workflow Típico de Release**
 
