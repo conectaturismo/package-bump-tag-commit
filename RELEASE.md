@@ -1,64 +1,49 @@
 # 🚀 Release Scripts Documentation
 
-Este proyecto incluye una serie de scripts automatizados para facilitar el proceso de releases y manejo de tags.
+Este proyecto incluye una serie de scripts automatizados **multiplataforma** para facilitar el proceso de releases y manejo de tags.
+
+> ✅ **Compatible con**: Windows, macOS, Linux
 
 ## 📋 Scripts Disponibles
 
-### 🏷️ **Manejo de Tags**
+### ✨ **Comandos Principales (Recomendados)**
 
 ```bash
 # Ver versión actual
-npm run tag:current
+npm run version
 
-# Listar todos los tags
-npm run tag:list
+# Release completo (build + tag + push)
+npm run release
 
-# Eliminar tag actual (útil para correcciones)
-npm run tag:delete
+# Bump automático con release completo
+npm run bump:patch   # 1.3.1 → 1.3.2 + release
+npm run bump:minor   # 1.3.1 → 1.4.0 + release  
+npm run bump:major   # 1.3.1 → 2.0.0 + release
 ```
 
-### 📦 **Proceso de Release Manual**
+### 🛠️ **Comandos Avanzados (Script Helper)**
+
+Para casos especiales, puedes usar el script helper directamente:
 
 ```bash
-# 1. Preparar release (build + commit dist/)
-npm run release:prepare
+# Gestión de versiones
+node scripts/release-helper.js version current
+node scripts/release-helper.js version patch|minor|major
 
-# 2. Crear tag de versión específica
-npm run release:tag
+# Gestión de tags  
+node scripts/release-helper.js tag list
+node scripts/release-helper.js tag push
+node scripts/release-helper.js tag delete
+node scripts/release-helper.js tag update-major
 
-# 3. Actualizar tag v1 para apuntar a la última versión
-npm run release:update-major
+# Gestión de releases
+node scripts/release-helper.js release prepare
+node scripts/release-helper.js release tag  
+node scripts/release-helper.js release update-major
+node scripts/release-helper.js release full
 
-# 4. Proceso completo (1+2+3)
-npm run release:full
-```
-
-### 🔄 **Bump de Versión + Release Automático**
-
-```bash
-# Bump patch (1.3.1 → 1.3.2) + release completo
-npm run bump:patch
-
-# Bump minor (1.3.1 → 1.4.0) + release completo  
-npm run bump:minor
-
-# Bump major (1.3.1 → 2.0.0) + release completo
-npm run bump:major
-```
-
-> **⚠️ Nota**: Los scripts `bump:*` automáticamente crean el tag con `npm version`, luego hacen push y ejecutan el release completo.
-
-### 📝 **Solo Bump de Versión (sin release)**
-
-```bash
-# Solo actualizar versión patch
-npm run version:patch
-
-# Solo actualizar versión minor  
-npm run version:minor
-
-# Solo actualizar versión major
-npm run version:major
+# Bump automático
+node scripts/release-helper.js bump patch|minor|major
 ```
 
 ## 🎯 **Casos de Uso Comunes**
@@ -88,15 +73,32 @@ npm run bump:major
 npm run release:full
 ```
 
-## ⚙️ **Qué Hace Cada Script**
+## ⚙️ **Arquitectura Simplificada**
+
+### 🎯 **Scripts Principales**
 
 | Script | Acción |
 |--------|---------|
-| `release:prepare` | Compila el proyecto y commitea `dist/` si hay cambios |
-| `release:tag` | Sube el tag existente `vX.Y.Z` a GitHub |
-| `release:update-major` | Actualiza tag `v1` para apuntar a la última versión |
-| `bump:*` | `npm version` + push + release completo |
-| `version:*` | Solo `npm version` (crea tag localmente) |
+| `npm run version` | Muestra la versión actual |
+| `npm run release` | Release completo (build + tag + push) |
+| `npm run bump:patch` | Bump patch + release automático |
+| `npm run bump:minor` | Bump minor + release automático |
+| `npm run bump:major` | Bump major + release automático |
+
+### 🛠️ **Arquitectura Multiplataforma**
+
+**✨ Novedad**: Todos los scripts complejos se han trasladado a `scripts/release-helper.js`
+
+- **📦 Package.json limpio**: Solo contiene los scripts esenciales
+- **🔧 Script helper**: Toda la lógica compleja en un solo archivo
+- **🌍 Multiplataforma**: Funciona en Windows, macOS y Linux
+- **📚 Documentado**: Ayuda integrada con `node scripts/release-helper.js`
+
+**Beneficios:**
+- ✅ **Mantenimiento más fácil**: Un solo archivo para toda la lógica de release
+- ✅ **Package.json limpio**: Menos ruido, más claridad  
+- ✅ **Mejor documentación**: Ayuda integrada y README específico
+- ✅ **Extensibilidad**: Fácil añadir nuevas funcionalidades
 
 ## 🔄 **Workflow Típico de Release**
 
