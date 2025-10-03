@@ -218,9 +218,13 @@ switch (command) {
         }
         break;
       case 'update-major':
-        console.log(`🔄 Updating v1 tag to point to ${version}...`);
-        exec('git tag -f v1');
-        exec('git push -f origin v1');
+        // Extract major version from current version (e.g., "2.0.0" -> "2")
+        const majorVersion = version.split('.')[0];
+        const majorTag = `v${majorVersion}`;
+        
+        console.log(`🔄 Updating ${majorTag} tag to point to ${version}...`);
+        exec(`git tag -f ${majorTag}`);
+        exec(`git push -f origin ${majorTag}`);
         break;
       case 'full':
         console.log('🚀 Starting full release process...');
