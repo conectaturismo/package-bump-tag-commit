@@ -33,6 +33,85 @@ function execQuiet(command) {
   }
 }
 
+function generateReleaseNotes(version) {
+  // Get the latest tag before current version
+  const previousTag = execQuiet('git describe --tags --abbrev=0 HEAD~1') || 'HEAD~10';
+  
+  // Get commit messages since last tag
+  const commits = execQuiet(`git log ${previousTag}..HEAD --pretty=format:"%s" --no-merges`);
+  
+  let releaseNotes = `## What's Changed in v${version}\n\n`;
+  
+  if (commits) {
+    const commitLines = commits.split('\n').filter(line => line.trim());
+    
+    const features = commitLines.filter(commit => 
+      commit.includes('feat:') || commit.includes('add:') || commit.includes('new:')
+    );
+    const fixes = commitLines.filter(commit => 
+      commit.includes('fix:') || commit.includes('bug:') || commit.includes('patch:')
+    );
+    const improvements = commitLines.filter(commit => 
+      commit.includes('refactor:') || commit.includes('improve:') || commit.includes('perf:')
+    );
+    const docs = commitLines.filter(commit => 
+      commit.includes('docs:') || commit.includes('doc:')
+    );
+    
+    if (features.length > 0) {
+      releaseNotes += `### ✨ New Features\n`;
+      features.forEach(commit => releaseNotes += `- ${commit}\n`);
+      releaseNotes += '\n';
+    }
+    
+    if (fixes.length > 0) {
+      releaseNotes += `### 🐛 Bug Fixes\n`;
+      fixes.forEach(commit => releaseNotes += `- ${commit}\n`);
+      releaseNotes += '\n';
+    }
+    
+    if (improvements.length > 0) {
+      releaseNotes += `### 🔧 Improvements\n`;
+      improvements.forEach(commit => releaseNotes += `- ${commit}\n`);
+      releaseNotes += '\n';
+    }
+    
+    if (docs.length > 0) {
+      releaseNotes += `### 📚 Documentation\n`;
+      docs.forEach(commit => releaseNotes += `- ${commit}\n`);
+      releaseNotes += '\n';
+    }
+    
+    // Other commits
+    const otherCommits = commitLines.filter(commit => 
+      !features.includes(commit) && 
+      !fixes.includes(commit) && 
+      !improvements.includes(commit) && 
+      !docs.includes(commit)
+    );
+    
+    if (otherCommits.length > 0) {
+      releaseNotes += `### 🔄 Other Changes\n`;
+      otherCommits.forEach(commit => releaseNotes += `- ${commit}\n`);
+      releaseNotes += '\n';
+    }
+  }
+  
+  releaseNotes += `## 🚀 Usage\n\n`;
+  releaseNotes += `\`\`\`yaml\n`;
+  releaseNotes += `- name: Package version bump\n`;
+  releaseNotes += `  uses: conectaturismo/package-bump-tag-commit@v${version}\n`;
+  releaseNotes += `  with:\n`;
+  releaseNotes += `    lang: js  # js, rust, php, python, go\n`;
+  releaseNotes += `    bumpLvl: patch\n`;
+  releaseNotes += `    save: true\n`;
+  releaseNotes += `    githubToken: \${{ secrets.GITHUB_TOKEN }}\n`;
+  releaseNotes += `\`\`\`\n\n`;
+  releaseNotes += `**Full Changelog**: https://github.com/conectaturismo/package-bump-tag-commit/compare/${previousTag}...v${version}`;
+  
+  return releaseNotes;
+}
+
 // Get command from arguments
 const command = process.argv[2];
 const subCommand = process.argv[3];
@@ -105,6 +184,39 @@ switch (command) {
         console.log(`📤 Pushing tag ${version}...`);
         exec(`git push origin ${version}`);
         break;
+      case 'github':
+        console.log(`🚀 Creating GitHub release ${version}...`);
+        // Generate release notes
+        const releaseNotes = generateReleaseNotes(packageJson.version);
+        
+        // Create temporary file for release notes
+        fs.writeFileSync('temp-release-notes.md', releaseNotes);
+        
+        try {
+          // Use GitHub CLI to create release
+          exec(`gh release create ${version} --title "Release ${version}" --notes-file temp-release-notes.md --latest`);
+          console.log('✅ GitHub release created successfully!');
+        } catch (error) {
+          console.log('❌ Failed to create GitHub release. Make sure you are authenticated with GitHub CLI.');
+          console.log('� Run: gh auth login');
+        } finally {
+          // Clean up temp file
+          if (fs.existsSync('temp-release-notes.md')) {
+            fs.unlinkSync('temp-release-notes.md');
+          }
+        }
+        break;
+      case 'open':
+        console.log('🌐 Opening GitHub repository in browser...');
+        try {
+          exec('gh repo view --web');
+          console.log('✅ GitHub repository opened in browser!');
+        } catch (error) {
+          console.log('❌ Failed to open repository. Make sure you are authenticated with GitHub CLI.');
+          console.log('💡 Run: gh auth login');
+          console.log('🔗 Or visit manually: https://github.com/conectaturismo/package-bump-tag-commit');
+        }
+        break;
       case 'update-major':
         console.log(`🔄 Updating v1 tag to point to ${version}...`);
         exec('git tag -f v1');
@@ -114,11 +226,12 @@ switch (command) {
         console.log('🚀 Starting full release process...');
         exec('node scripts/release-helper.js release prepare');
         exec('node scripts/release-helper.js release tag');
+        exec('node scripts/release-helper.js release github');
         exec('node scripts/release-helper.js release update-major');
         console.log('✅ Release completed!');
         break;
       default:
-        console.log('Usage: node scripts/release-helper.js release [prepare|tag|update-major|full]');
+        console.log('Usage: node scripts/release-helper.js release [prepare|tag|github|open|update-major|full]');
     }
     break;
 
@@ -155,6 +268,8 @@ Commands:
   
   release prepare          Build and commit dist/
   release tag              Push current version tag
+  release github           Create GitHub release (needs GITHUB_TOKEN)
+  release open             Open GitHub release page in browser
   release update-major     Update v1 tag
   release full             Complete release process
   

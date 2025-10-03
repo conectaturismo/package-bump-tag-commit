@@ -15,10 +15,16 @@ npm run version
 # Release completo (build + tag + push)
 npm run release
 
+# Crear GitHub release (requiere GITHUB_TOKEN)
+npm run release:github
+
+# Abrir página de GitHub release en el navegador
+npm run release:open
+
 # Bump automático con release completo
-npm run bump:patch   # 1.3.1 → 1.3.2 + release
-npm run bump:minor   # 1.3.1 → 1.4.0 + release  
-npm run bump:major   # 1.3.1 → 2.0.0 + release
+npm run bump:patch   # 1.3.2 → 1.3.3 + release
+npm run bump:minor   # 1.3.2 → 1.4.0 + release  
+npm run bump:major   # 1.3.2 → 2.0.0 + release
 ```
 
 ### 🛠️ **Comandos Avanzados (Script Helper)**
@@ -52,25 +58,48 @@ node scripts/release-helper.js bump patch|minor|major
 ```bash
 # Para bugs menores, documentación, etc.
 npm run bump:patch
+npm run release:github  # Crear GitHub release
 ```
 
 ### ✨ **Feature Release**
 ```bash
 # Para nuevas características (como añadir Go support)
 npm run bump:minor
+npm run release:github  # Crear GitHub release
 ```
 
 ### 💥 **Breaking Changes**
 ```bash
 # Para cambios que rompen compatibilidad
 npm run bump:major
+npm run release:github  # Crear GitHub release
 ```
 
 ### 🔧 **Release Manual con Versión Específica**
 ```bash
 # 1. Editar package.json manualmente
 # 2. Ejecutar release completo
-npm run release:full
+npm run release
+# 3. Crear GitHub release
+npm run release:github
+# O abrir en navegador para creación manual
+npm run release:open
+```
+
+### 🌐 **Creación de GitHub Release**
+
+**Opción 1: Automática (recomendada)**
+```bash
+# Configurar token de GitHub
+export GITHUB_TOKEN=tu_token_aqui
+npm run release:github
+```
+
+**Opción 2: Manual**
+```bash
+# Abrir página de release en navegador
+npm run release:open
+# Las notas se generan automáticamente y se muestran en consola
 ```
 
 ## ⚙️ **Arquitectura Simplificada**

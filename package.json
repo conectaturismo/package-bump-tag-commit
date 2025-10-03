@@ -16,6 +16,8 @@
     "test:go": "node test-integration.js --lang=go",
     "version": "node scripts/release-helper.js version current",
     "release": "node scripts/release-helper.js release full",
+    "release:github": "node scripts/release-helper.js release github",
+    "release:open": "node scripts/release-helper.js release open",
     "bump:patch": "node scripts/release-helper.js bump patch",
     "bump:minor": "node scripts/release-helper.js bump minor",
     "bump:major": "node scripts/release-helper.js bump major"

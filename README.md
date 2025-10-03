@@ -497,11 +497,36 @@ git clone https://github.com/conectaturismo/package-bump-tag-commit.git
 # Install dependencies  
 npm install
 
+# Install GitHub CLI (required for releases)
+# Windows: winget install --id GitHub.cli
+# macOS: brew install gh
+# Linux: Check https://github.com/cli/cli#installation
+
+# Authenticate with GitHub
+gh auth login
+
 # Run tests
 npm test
 
 # Build bundle
 npm run build
+```
+
+### Development Scripts
+
+```bash
+# Version management
+npm run version              # Show current version
+npm run bump:patch          # Bump patch + full release
+npm run bump:minor          # Bump minor + full release  
+npm run bump:major          # Bump major + full release
+
+# Release management (requires GitHub CLI)
+npm run release             # Full release process
+npm run release:prepare     # Build and commit dist/
+npm run release:tag         # Push current tag to GitHub
+npm run release:github      # Create GitHub release
+npm run release:open        # Open repository in browser
 ```
 
 ## 📄 License
