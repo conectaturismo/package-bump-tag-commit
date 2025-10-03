@@ -1,110 +1,35 @@
 /******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
-/***/ 37:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-const github = __nccwpck_require__(3228);
-const { exec } = __nccwpck_require__(5236);
-
-module.exports = class GitCmd {
-  constructor(ghToken) {
-    this.octokit = github.getOctokit(ghToken);
-  }
-
-  static fromGhToken(ghToken) {
-    return new GitCmd(ghToken);
-  }
-
-  async createTag(version) {
-    const tagRsp = await this.octokit.rest.repos.createRelease({
-      ...github.context.repo,
-      tag_name: `v${version}`,
-    });
-
-    if (tagRsp.status !== 201) throw new Error(`Failed to create tag: ${JSON.stringify(tagRsp)}`);
-  }
-
-  async commit() {
-    const branch = github.context.ref.split('/').slice(2).join('/');
-    await exec('git', ['add', '-A']);
-    await exec('git', ['config', '--local', 'user.name', 'Conecta Turismo CI']);
-    await exec('git', ['config', '--local', 'user.email', 'sergio.garcia.seo@gmail.com']);
-    await exec('git', ['commit', '--no-verify', '-m', 'CI: Publish new version']);
-    await exec('git', ['push', 'origin', branch]);
-  }
-};
-
-
-/***/ }),
-
 /***/ 6136:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-const core = __nccwpck_require__(7484);
-const semver = __nccwpck_require__(2088);
-const github = __nccwpck_require__(3228);
-const { join } = __nccwpck_require__(6928);
-const { existsSync } = __nccwpck_require__(9896);
+/**
+ * GitHub Action Entry Point
+ * 
+ * This is the main entry point for the GitHub Action.
+ * It uses the new modular architecture to perform version bumping operations.
+ */
 
-const PackageVersion = __nccwpck_require__(5313);
-const GitCmd = __nccwpck_require__(37);
+const ActionOrchestrator = __nccwpck_require__(5943);
 
-const enabledLangs = ['rust', 'js', 'php', 'python'];
-const defaultPAckages = { 
-  js: 'package.json', 
-  rust: 'Cargo.toml', 
-  php: 'composer.json', 
-  python: 'pyproject.toml' 
-};
-const enabledbumpLvls = ['major', 'minor', 'patch', 'hotfix', 'none'];
-
+/**
+ * Main execution function
+ * @returns {Promise<void>}
+ */
 const run = async () => {
-  try {
-    const lang = core.getInput('lang') || 'js';
-    const workspacePath = process.env.GITHUB_WORKSPACE || './';
-    const bumpLvl = core.getInput('bumpLvl') || 'patch';
-
-    let inputPath = core.getInput('path') || defaultPAckages[lang];
-    
-    // For Python, if no path is specified, try to find the most appropriate file
-    if (lang === 'python' && !core.getInput('path')) {
-      const candidatePaths = ['pyproject.toml', 'setup.py', 'src/__init__.py', '__init__.py'];
-      for (const candidate of candidatePaths) {
-        const fullPath = join(workspacePath, candidate);
-        if (existsSync(fullPath)) {
-          inputPath = candidate;
-          break;
-        }
-      }
-    }
-    const saveOper = core.getBooleanInput('save') || false;
-    const ghToken = core.getInput('githubToken');
-
-    if (!enabledLangs.includes(lang)) throw new Error(`Language ${lang} is not supported`);
-    if (!workspacePath) throw new Error('GITHUB_WORKSPACE env variable is not set.');
-    if (!enabledbumpLvls.includes(bumpLvl))
-      throw new Error(`Bump level ${bumpLvl} is not supported`);
-
-    const path = join(workspacePath, inputPath);
-    const packageFile = PackageVersion.fromFile(path, lang).bump(bumpLvl);
-
-    if (saveOper) {
-      if (!ghToken) throw new Error('githubToken is required for save operation');
-      const gitCmd = GitCmd.fromGhToken(ghToken);
-      packageFile.save();
-      await gitCmd.createTag(packageFile.version);
-      await gitCmd.commit();
-    }
-
-    core.info(`New version: ${packageFile.version}`);
-    core.setOutput('version', packageFile.version);
-  } catch (error) {
-    core.setFailed(error.message);
-  }
+  const orchestrator = new ActionOrchestrator();
+  await orchestrator.execute();
 };
 
-run();
+// Execute the action when this file is run directly
+if (require.main === require.cache[eval('__filename')]) {
+  run().catch((error) => {
+    console.error('Action failed:', error.message);
+    process.exit(1);
+  });
+}
+
 module.exports = run;
 
 
@@ -1138,7 +1063,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.getExecOutput = exports.exec = void 0;
-const string_decoder_1 = __nccwpck_require__(3193);
+const string_decoder_1 = __nccwpck_require__(5574);
 const tr = __importStar(__nccwpck_require__(6665));
 /**
  * Exec a command.
@@ -11801,7 +11726,7 @@ module.exports = rsort
 
 /***/ }),
 
-/***/ 8011:
+/***/ 392:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 const Range = __nccwpck_require__(6782)
@@ -11874,9 +11799,9 @@ const cmp = __nccwpck_require__(8646)
 const coerce = __nccwpck_require__(5385)
 const Comparator = __nccwpck_require__(9379)
 const Range = __nccwpck_require__(6782)
-const satisfies = __nccwpck_require__(8011)
+const satisfies = __nccwpck_require__(392)
 const toComparators = __nccwpck_require__(4750)
-const maxSatisfying = __nccwpck_require__(5574)
+const maxSatisfying = __nccwpck_require__(3193)
 const minSatisfying = __nccwpck_require__(8595)
 const minVersion = __nccwpck_require__(1866)
 const validRange = __nccwpck_require__(4737)
@@ -12354,7 +12279,7 @@ module.exports = ltr
 
 /***/ }),
 
-/***/ 5574:
+/***/ 3193:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 const SemVer = __nccwpck_require__(7163)
@@ -12492,7 +12417,7 @@ const SemVer = __nccwpck_require__(7163)
 const Comparator = __nccwpck_require__(9379)
 const { ANY } = Comparator
 const Range = __nccwpck_require__(6782)
-const satisfies = __nccwpck_require__(8011)
+const satisfies = __nccwpck_require__(392)
 const gt = __nccwpck_require__(6599)
 const lt = __nccwpck_require__(3872)
 const lte = __nccwpck_require__(6717)
@@ -12578,7 +12503,7 @@ module.exports = outside
 // given a set of versions and a range, create a "simplified" range
 // that includes the same versions that the original range does
 // If the original range is shorter than the simplified one, return that.
-const satisfies = __nccwpck_require__(8011)
+const satisfies = __nccwpck_require__(392)
 const compare = __nccwpck_require__(8469)
 module.exports = (versions, range, options) => {
   const set = []
@@ -12632,7 +12557,7 @@ module.exports = (versions, range, options) => {
 const Range = __nccwpck_require__(6782)
 const Comparator = __nccwpck_require__(9379)
 const { ANY } = Comparator
-const satisfies = __nccwpck_require__(8011)
+const satisfies = __nccwpck_require__(392)
 const compare = __nccwpck_require__(8469)
 
 // Complex range `r1 || r2 || ...` is a subset of `R1 || R2 || ...` iff:
@@ -30186,7 +30111,7 @@ const { getEncoding } = __nccwpck_require__(396)
 const { DOMException } = __nccwpck_require__(7326)
 const { serializeAMimeType, parseMIMEType } = __nccwpck_require__(4322)
 const { types } = __nccwpck_require__(9023)
-const { StringDecoder } = __nccwpck_require__(3193)
+const { StringDecoder } = __nccwpck_require__(5574)
 const { btoa } = __nccwpck_require__(181)
 
 /** @type {PropertyDescriptor} */
@@ -36065,136 +35990,1721 @@ function wrappy (fn, cb) {
 
 /***/ }),
 
-/***/ 5313:
+/***/ 5943:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const PackageVersion = __nccwpck_require__(2497);
+const InputService = __nccwpck_require__(1335);
+const PathResolverService = __nccwpck_require__(9062);
+const GitService = __nccwpck_require__(2591);
+const OutputService = __nccwpck_require__(2038);
+
+/**
+ * Main action orchestrator class
+ * Coordinates all services to perform version bumping operations
+ */
+class ActionOrchestrator {
+  constructor() {
+    this.inputService = new InputService();
+  }
+
+  /**
+   * Execute the main action workflow
+   * @returns {Promise<void>}
+   */
+  async execute() {
+    try {
+      // Parse and validate inputs
+      const inputs = this.inputService.parseInputs();
+      
+      OutputService.logDebug(`Inputs parsed: ${JSON.stringify(inputs, null, 2)}`);
+
+      // Resolve target file path
+      const filePath = PathResolverService.resolveFilePath(
+        inputs.lang, 
+        inputs.workspacePath, 
+        inputs.path
+      );
+
+      OutputService.logFileOperation(filePath, 'Reading');
+
+      // Load and bump version
+      const packageVersion = PackageVersion.fromFile(filePath, inputs.lang);
+      const oldVersion = packageVersion.getCurrentVersion();
+      
+      packageVersion.bump(inputs.bumpLvl);
+      const newVersion = packageVersion.getCurrentVersion();
+
+      OutputService.logVersionBump(oldVersion, newVersion, inputs.bumpLvl);
+
+      // Handle save operations
+      if (inputs.save) {
+        await this._handleSaveOperations(packageVersion, inputs, filePath);
+      } else {
+        OutputService.logDryRun(oldVersion, newVersion, inputs.bumpLvl);
+      }
+
+      // Set outputs
+      OutputService.setVersionOutput(newVersion);
+      OutputService.logSuccess(newVersion, filePath);
+
+    } catch (error) {
+      OutputService.setFailed(error);
+      throw error; // Re-throw for testing purposes
+    }
+  }
+
+  /**
+   * Handle save operations (file save + git operations)
+   * @private
+   * @param {PackageVersion} packageVersion - Package version instance
+   * @param {object} inputs - Validated inputs
+   * @param {string} filePath - Absolute file path
+   * @returns {Promise<void>}
+   */
+  async _handleSaveOperations(packageVersion, inputs, filePath) {
+    try {
+      // Save file changes
+      packageVersion.save();
+      OutputService.logFileOperation(filePath, 'Saved');
+
+      // Handle Git operations if token provided
+      if (inputs.githubToken) {
+        const gitService = GitService.fromToken(inputs.githubToken);
+        await gitService.createTagAndCommit(packageVersion.getCurrentVersion());
+        OutputService.logGitOperations(
+          packageVersion.getCurrentVersion(), 
+          true, // tagged
+          true  // committed
+        );
+      } else {
+        OutputService.logWarning('No GitHub token provided - skipping Git operations');
+      }
+
+    } catch (error) {
+      throw new Error(`Save operations failed: ${error.message}`);
+    }
+  }
+
+  /**
+   * Execute with custom inputs (for testing)
+   * @param {object} customInputs - Custom input values
+   * @returns {Promise<void>}
+   */
+  async executeWithInputs(customInputs) {
+    // Override environment variables for testing
+    const originalEnv = { ...process.env };
+    
+    try {
+      if (customInputs.workspacePath) {
+        process.env.GITHUB_WORKSPACE = customInputs.workspacePath;
+      }
+
+      // Mock core inputs
+      const originalGetInput = (__nccwpck_require__(7484).getInput);
+      const originalGetBooleanInput = (__nccwpck_require__(7484).getBooleanInput);
+      
+      (__nccwpck_require__(7484).getInput) = (name) => customInputs[name] || '';
+      (__nccwpck_require__(7484).getBooleanInput) = (name) => customInputs[name] || false;
+
+      await this.execute();
+
+      // Restore original functions
+      (__nccwpck_require__(7484).getInput) = originalGetInput;
+      (__nccwpck_require__(7484).getBooleanInput) = originalGetBooleanInput;
+
+    } finally {
+      // Restore environment
+      process.env = originalEnv;
+    }
+  }
+
+  /**
+   * Get dry run results without executing save operations
+   * @param {object} customInputs - Custom input values
+   * @returns {Promise<object>} Dry run results
+   */
+  async getDryRunResults(customInputs = {}) {
+    const inputs = customInputs.workspacePath ? 
+      customInputs : 
+      this.inputService.parseInputs();
+
+    const filePath = PathResolverService.resolveFilePath(
+      inputs.lang || 'js', 
+      inputs.workspacePath || './', 
+      inputs.path
+    );
+
+    const packageVersion = PackageVersion.fromFile(filePath, inputs.lang || 'js');
+    const oldVersion = packageVersion.getCurrentVersion();
+    const nextVersion = packageVersion.getNextVersion(inputs.bumpLvl || 'patch');
+
+    return {
+      filePath,
+      currentVersion: oldVersion,
+      nextVersion,
+      bumpLevel: inputs.bumpLvl || 'patch',
+      language: inputs.lang || 'js'
+    };
+  }
+}
+
+module.exports = ActionOrchestrator;
+
+/***/ }),
+
+/***/ 2497:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 const fs = __nccwpck_require__(9896);
-const TOML = __nccwpck_require__(5128);
-const semver = __nccwpck_require__(2088);
+const ParserFactory = __nccwpck_require__(8011);
+const WriterFactory = __nccwpck_require__(1691);
+const VersionBumper = __nccwpck_require__(6642);
 
-module.exports = class PackageVersion {
-  constructor(file, version, lang, path) {
+/**
+ * Main class for handling package version operations
+ * Orchestrates parsing, version bumping, and writing across different languages
+ */
+class PackageVersion {
+  constructor(filePath, data, version, parser, writer) {
+    this.filePath = filePath;
+    this.data = data;
     this.version = version;
-    this.file = file;
-    this.lang = lang;
-    this.path = path;
+    this.parser = parser;
+    this.writer = writer;
   }
 
-  static fromFile(path, lang) {
-    if (lang === 'js') {
-      fs.accessSync(path);
-      const versionFile = fs.readFileSync(path);
-      const data = JSON.parse(versionFile);
-      return new PackageVersion(data, data.version, lang, path);
-    } else if (lang === 'rust') {
-      fs.accessSync(path);
-      const cargo = fs.readFileSync(path);
-      const data = TOML.parse(cargo);
-      return new PackageVersion(data, data.package.version, lang, path);
-    } else if (lang === 'php') {
-      fs.accessSync(path);
-      const versionFile = fs.readFileSync(path);
-      const data = JSON.parse(versionFile);
-      return new PackageVersion(data, data.version, lang, path);
-    } else if (lang === 'python') {
-      fs.accessSync(path);
-      const content = fs.readFileSync(path, 'utf8');
-      let data, version;
-      
-      // Detect file type by content and name
-      const isTomlFile = path.includes('.toml') || content.includes('[project]') || content.includes('[tool.poetry]');
-      const isSetupPy = path.includes('setup.py') || content.includes('setup(');
-      const isInitPy = path.includes('__init__.py') || content.includes('__version__');
-      
-      if (isTomlFile) {
-        // pyproject.toml format
-        data = TOML.parse(content);
-        version = data.project?.version || data.tool?.poetry?.version;
-      } else if (isSetupPy) {
-        // Extract version from setup.py
-        const versionMatch = content.match(/version\s*=\s*['"]([^'"]+)['"]/);
-        if (!versionMatch) throw new Error('Version not found in setup.py');
-        version = versionMatch[1];
-        data = { version, _content: content, _fileType: 'setup.py' };
-      } else if (isInitPy) {
-        // Extract version from __init__.py
-        const versionMatch = content.match(/__version__\s*=\s*['"]([^'"]+)['"]/);
-        if (!versionMatch) throw new Error('__version__ not found in __init__.py');
-        version = versionMatch[1];
-        data = { version, _content: content, _fileType: '__init__.py' };
-      } else {
-        throw new Error(`Unsupported Python file format: ${path}`);
-      }
-      
-      if (!version) throw new Error('Version not found in Python project file');
-      return new PackageVersion(data, version, lang, path);
+  /**
+   * Create PackageVersion instance from file
+   * @param {string} filePath - Path to the package file
+   * @param {string} lang - Language identifier (js, rust, php, python)
+   * @returns {PackageVersion} New instance
+   * @throws {Error} If file cannot be read or parsed
+   */
+  static fromFile(filePath, lang) {
+    if (!fs.existsSync(filePath)) {
+      throw new Error(`File not found: ${filePath}`);
+    }
+
+    const content = fs.readFileSync(filePath, 'utf8');
+    const parserFactory = new ParserFactory();
+    const writerFactory = new WriterFactory();
+
+    let parser;
+    if (lang) {
+      parser = parserFactory.getParserByLanguage(lang, filePath, content);
     } else {
-      throw new Error(`Language ${lang} is not supported`);
+      parser = parserFactory.getParser(filePath, content);
     }
+
+    const data = parser.parse(filePath, content);
+    const version = parser.extractVersion(data);
+    const writer = writerFactory.getWriter(filePath, data);
+
+    return new PackageVersion(filePath, data, version, parser, writer);
   }
 
-  bump(rawLvl) {
-    const lvl = rawLvl === 'hotfix' ? 'prerelease' : rawLvl;
-    const version = semver.valid(this.version);
-    if (!version) throw new Error(`Version ${version} is not valid semver`);
-    if (rawLvl !== 'none') {
-      this.version = semver.inc(this.version, lvl, 'hotfix');
-    }
+  /**
+   * Create PackageVersion instance with auto-detection
+   * @param {string} filePath - Path to the package file
+   * @returns {PackageVersion} New instance
+   * @throws {Error} If file cannot be read or parsed
+   */
+  static fromFileAuto(filePath) {
+    return PackageVersion.fromFile(filePath);
+  }
+
+  /**
+   * Bump the version
+   * @param {string} bumpLevel - Bump level (major, minor, patch, hotfix, none)
+   * @returns {PackageVersion} This instance for chaining
+   * @throws {Error} If bump level is invalid
+   */
+  bump(bumpLevel) {
+    const newVersion = VersionBumper.bump(this.version, bumpLevel);
+    this.version = newVersion;
+    this.data = this.writer.updateVersion(this.data, newVersion);
     return this;
   }
 
+  /**
+   * Get what the next version would be without applying it
+   * @param {string} bumpLevel - Bump level
+   * @returns {string} Next version string
+   */
+  getNextVersion(bumpLevel) {
+    return VersionBumper.getNextVersion(this.version, bumpLevel);
+  }
+
+  /**
+   * Save the updated version to file
+   * @throws {Error} If file cannot be written
+   */
   save() {
-    if (this.lang === 'js') {
-      this.file.version = this.version;
-      const file = JSON.stringify(this.file, null, 2);
-      fs.writeFileSync(this.path, file + '\n');
-    } else if (this.lang === 'rust') {
-      this.file.package.version = this.version;
-      const file = TOML.stringify(this.file, {
-        newline: '\n',
-        newlineAround: 'section',
-      });
-      fs.writeFileSync(this.path, file + '\n');
-    } else if (this.lang === 'php') {
-      this.file.version = this.version;
-      const file = JSON.stringify(this.file, null, 2);
-      fs.writeFileSync(this.path, file + '\n');
-    } else if (this.lang === 'python') {
-      const isTomlFile = this.path.includes('.toml') || !this.file._fileType;
-      const isSetupPy = this.file._fileType === 'setup.py' || this.path.includes('setup.py');
-      const isInitPy = this.file._fileType === '__init__.py' || this.path.includes('__init__.py');
-      
-      if (isTomlFile && !isSetupPy && !isInitPy) {
-        // Update pyproject.toml
-        if (this.file.project) {
-          this.file.project.version = this.version;
-        } else if (this.file.tool?.poetry) {
-          this.file.tool.poetry.version = this.version;
+    this.writer.write(this.filePath, this.data, this.version);
+  }
+
+  /**
+   * Get current version without bumping
+   * @returns {string} Current version
+   */
+  getCurrentVersion() {
+    return this.version;
+  }
+
+  /**
+   * Get file path
+   * @returns {string} File path
+   */
+  getFilePath() {
+    return this.filePath;
+  }
+
+  /**
+   * Get supported languages
+   * @returns {string[]} Array of supported language identifiers
+   */
+  static getSupportedLanguages() {
+    const factory = new ParserFactory();
+    return factory.getSupportedLanguages();
+  }
+
+  /**
+   * Check if a language is supported
+   * @param {string} lang - Language identifier
+   * @returns {boolean} True if supported
+   */
+  static isLanguageSupported(lang) {
+    return PackageVersion.getSupportedLanguages().includes(lang);
+  }
+}
+
+module.exports = PackageVersion;
+
+/***/ }),
+
+/***/ 6642:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const semver = __nccwpck_require__(2088);
+const ConfigService = __nccwpck_require__(1161);
+
+/**
+ * Service for handling semantic version bumping operations
+ */
+class VersionBumper {
+  /**
+   * Supported bump levels (delegated to ConfigService)
+   */
+  static get BUMP_LEVELS() {
+    return ConfigService.SUPPORTED_BUMP_LEVELS;
+  }
+
+  /**
+   * Bump version according to semantic versioning
+   * @param {string} currentVersion - Current version string
+   * @param {string} bumpLevel - Bump level (major, minor, patch, hotfix, none)
+   * @returns {string} New version string
+   * @throws {Error} If version or bump level is invalid
+   */
+  static bump(currentVersion, bumpLevel) {
+    if (!VersionBumper.BUMP_LEVELS.includes(bumpLevel)) {
+      throw new Error(`Invalid bump level: ${bumpLevel}. Supported levels: ${VersionBumper.BUMP_LEVELS.join(', ')}`);
+    }
+
+    const version = semver.valid(currentVersion);
+    if (!version) {
+      throw new Error(`Invalid version: ${currentVersion}. Must be a valid semantic version.`);
+    }
+
+    if (bumpLevel === 'none') {
+      return currentVersion;
+    }
+
+    const level = bumpLevel === 'hotfix' ? 'prerelease' : bumpLevel;
+    const identifier = bumpLevel === 'hotfix' ? 'hotfix' : undefined;
+    
+    return semver.inc(currentVersion, level, identifier);
+  }
+
+  /**
+   * Validate if a version string is valid semver
+   * @param {string} version - Version string to validate
+   * @returns {boolean} True if valid
+   */
+  static isValidVersion(version) {
+    return semver.valid(version) !== null;
+  }
+
+  /**
+   * Get the next version without applying it
+   * @param {string} currentVersion - Current version string
+   * @param {string} bumpLevel - Bump level
+   * @returns {string} What the new version would be
+   */
+  static getNextVersion(currentVersion, bumpLevel) {
+    return VersionBumper.bump(currentVersion, bumpLevel);
+  }
+}
+
+module.exports = VersionBumper;
+
+/***/ }),
+
+/***/ 1161:
+/***/ ((module) => {
+
+/**
+ * Configuration service for GitHub Actions inputs and environment
+ */
+class ConfigService {
+  /**
+   * Supported programming languages
+   */
+  static get SUPPORTED_LANGUAGES() {
+    return ['js', 'rust', 'php', 'python'];
+  }
+
+  /**
+   * Default package files for each language
+   */
+  static get DEFAULT_PACKAGE_FILES() {
+    return {
+      js: 'package.json',
+      rust: 'Cargo.toml', 
+      php: 'composer.json',
+      python: 'pyproject.toml'
+    };
+  }
+
+  /**
+   * File patterns for language detection
+   */
+  static get LANGUAGE_FILE_PATTERNS() {
+    return {
+      js: ['package.json'],
+      rust: ['Cargo.toml'],
+      php: ['composer.json'],
+      python: ['pyproject.toml', 'setup.py', '__init__.py']
+    };
+  }
+
+  /**
+   * Test bump levels for each language (for testing purposes)
+   */
+  static get LANGUAGE_TEST_BUMPS() {
+    return {
+      js: ['patch', 'minor', 'major'],
+      rust: ['patch', 'minor', 'major'],
+      php: ['patch', 'minor', 'major', 'hotfix'],
+      python: {
+        'pyproject.toml': ['patch', 'minor', 'major'],
+        'setup.py': ['patch', 'minor', 'major'],
+        '__init__.py': ['patch', 'minor']
+      }
+    };
+  }
+
+  /**
+   * Supported bump levels
+   */
+  static get SUPPORTED_BUMP_LEVELS() {
+    return ['major', 'minor', 'patch', 'hotfix', 'none'];
+  }
+
+  /**
+   * Python file candidates for auto-detection
+   */
+  static get PYTHON_FILE_CANDIDATES() {
+    return ['pyproject.toml', 'setup.py', 'src/__init__.py', '__init__.py'];
+  }
+
+  /**
+   * Validate if a language is supported
+   * @param {string} lang - Language identifier
+   * @returns {boolean} True if supported
+   */
+  static isLanguageSupported(lang) {
+    return ConfigService.SUPPORTED_LANGUAGES.includes(lang);
+  }
+
+  /**
+   * Validate if a bump level is supported
+   * @param {string} bumpLevel - Bump level
+   * @returns {boolean} True if supported
+   */
+  static isBumpLevelSupported(bumpLevel) {
+    return ConfigService.SUPPORTED_BUMP_LEVELS.includes(bumpLevel);
+  }
+
+  /**
+   * Get default package file for a language
+   * @param {string} lang - Language identifier
+   * @returns {string} Default package file name
+   */
+  static getDefaultPackageFile(lang) {
+    return ConfigService.DEFAULT_PACKAGE_FILES[lang];
+  }
+
+  /**
+   * Get file patterns for language detection
+   * @param {string} lang - Language identifier
+   * @returns {string[]} Array of file patterns
+   */
+  static getLanguageFilePatterns(lang) {
+    return ConfigService.LANGUAGE_FILE_PATTERNS[lang] || [];
+  }
+
+  /**
+   * Get test bump levels for a language/file combination
+   * @param {string} lang - Language identifier
+   * @param {string} fileName - Optional file name for Python disambiguation
+   * @returns {string[]} Array of bump levels to test
+   */
+  static getTestBumps(lang, fileName = '') {
+    const testBumps = ConfigService.LANGUAGE_TEST_BUMPS[lang];
+    
+    if (lang === 'python' && typeof testBumps === 'object') {
+      // Handle Python's multiple format support
+      for (const [pattern, bumps] of Object.entries(testBumps)) {
+        if (fileName.includes(pattern)) {
+          return bumps;
         }
-        const file = TOML.stringify(this.file, {
-          newline: '\n',
-          newlineAround: 'section',
-        });
-        fs.writeFileSync(this.path, file + '\n');
-      } else if (isSetupPy) {
-        // Update setup.py
-        const updatedContent = this.file._content.replace(
-          /version\s*=\s*['"][^'"]+['"]/,
-          `version='${this.version}'`
-        );
-        fs.writeFileSync(this.path, updatedContent);
-      } else if (isInitPy) {
-        // Update __init__.py
-        const updatedContent = this.file._content.replace(
-          /__version__\s*=\s*['"][^'"]+['"]/,
-          `__version__ = '${this.version}'`
-        );
-        fs.writeFileSync(this.path, updatedContent);
+      }
+      return testBumps['pyproject.toml']; // Default
+    }
+    
+    return testBumps || [];
+  }
+
+  /**
+   * Check if a file path matches a language pattern
+   * @param {string} filePath - File path to check
+   * @param {string} lang - Language to check against
+   * @returns {boolean} True if file matches language
+   */
+  static isFileForLanguage(filePath, lang) {
+    const patterns = ConfigService.getLanguageFilePatterns(lang);
+    return patterns.some(pattern => filePath.includes(pattern));
+  }
+}
+
+module.exports = ConfigService;
+
+/***/ }),
+
+/***/ 8011:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const JavaScriptParser = __nccwpck_require__(4748);
+const RustParser = __nccwpck_require__(825);
+const PhpParser = __nccwpck_require__(6013);
+const PythonTomlParser = __nccwpck_require__(2617);
+const PythonSetupParser = __nccwpck_require__(4342);
+const PythonInitParser = __nccwpck_require__(2031);
+const ConfigService = __nccwpck_require__(1161);
+
+/**
+ * Factory class for creating appropriate parsers
+ */
+class ParserFactory {
+  constructor() {
+    this.parsers = [
+      new JavaScriptParser(),
+      new RustParser(),
+      new PhpParser(),
+      new PythonTomlParser(),
+      new PythonSetupParser(),
+      new PythonInitParser()
+    ];
+  }
+
+  /**
+   * Find the appropriate parser for a file
+   * @param {string} filePath - Path to the file
+   * @param {string} content - File content
+   * @returns {BaseParser} The appropriate parser
+   * @throws {Error} If no suitable parser is found
+   */
+  getParser(filePath, content) {
+    for (const parser of this.parsers) {
+      if (parser.canHandle(filePath, content)) {
+        return parser;
       }
     }
+    
+    throw new Error(`No parser found for file: ${filePath}`);
   }
-};
 
+  /**
+   * Get parser by language name
+   * @param {string} lang - Language identifier (js, rust, php, python)
+   * @param {string} filePath - Path to the file (for Python disambiguation)
+   * @param {string} content - File content (for Python disambiguation)  
+   * @returns {BaseParser} The appropriate parser
+   * @throws {Error} If language is not supported
+   */
+  getParserByLanguage(lang, filePath = '', content = '') {
+    switch (lang) {
+      case 'js':
+        return new JavaScriptParser();
+      case 'rust':
+        return new RustParser();
+      case 'php':
+        return new PhpParser();
+      case 'python':
+        // For Python, we need to determine the specific format
+        if (filePath.includes('.toml') || content.includes('[project]') || content.includes('[tool.poetry]')) {
+          return new PythonTomlParser();
+        } else if (filePath.includes('setup.py') || content.includes('setup(')) {
+          return new PythonSetupParser();
+        } else if (filePath.includes('__init__.py') || content.includes('__version__')) {
+          return new PythonInitParser();
+        } else {
+          // Default to TOML for Python
+          return new PythonTomlParser();
+        }
+      default:
+        throw new Error(`Unsupported language: ${lang}`);
+    }
+  }
+
+  /**
+   * Get all supported languages
+   * @returns {string[]} Array of supported language identifiers
+   */
+  getSupportedLanguages() {
+    return ConfigService.SUPPORTED_LANGUAGES;
+  }
+}
+
+module.exports = ParserFactory;
+
+/***/ }),
+
+/***/ 1691:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const JavaScriptWriter = __nccwpck_require__(3108);
+const RustWriter = __nccwpck_require__(4449);
+const PhpWriter = __nccwpck_require__(8933);
+const PythonTomlWriter = __nccwpck_require__(4529);
+const PythonSetupWriter = __nccwpck_require__(3670);
+const PythonInitWriter = __nccwpck_require__(4519);
+
+/**
+ * Factory class for creating appropriate writers
+ */
+class WriterFactory {
+  constructor() {
+    this.writers = [
+      new JavaScriptWriter(),
+      new RustWriter(),
+      new PhpWriter(),
+      new PythonTomlWriter(),
+      new PythonSetupWriter(),
+      new PythonInitWriter()
+    ];
+  }
+
+  /**
+   * Find the appropriate writer for a file and data
+   * @param {string} filePath - Path to the file
+   * @param {object} data - Parsed data
+   * @returns {BaseWriter} The appropriate writer
+   * @throws {Error} If no suitable writer is found
+   */
+  getWriter(filePath, data) {
+    for (const writer of this.writers) {
+      if (writer.canHandle(filePath, data)) {
+        return writer;
+      }
+    }
+    
+    throw new Error(`No writer found for file: ${filePath}`);
+  }
+}
+
+module.exports = WriterFactory;
+
+/***/ }),
+
+/***/ 7054:
+/***/ ((module) => {
+
+/**
+ * Abstract base class for version file parsers
+ * Defines the interface that all language parsers must implement
+ */
+class BaseParser {
+  /**
+   * Parse version from file content
+   * @param {string} filePath - Path to the file
+   * @param {string} content - File content
+   * @returns {object} Parsed data with version information
+   */
+  parse(filePath, content) {
+    throw new Error('parse() method must be implemented by subclass');
+  }
+
+  /**
+   * Extract version from parsed data
+   * @param {object} data - Parsed file data
+   * @returns {string} Version string
+   */
+  extractVersion(data) {
+    throw new Error('extractVersion() method must be implemented by subclass');
+  }
+
+  /**
+   * Check if this parser can handle the given file
+   * @param {string} filePath - Path to the file
+   * @param {string} content - File content
+   * @returns {boolean} True if parser can handle the file
+   */
+  canHandle(filePath, content) {
+    throw new Error('canHandle() method must be implemented by subclass');
+  }
+
+  /**
+   * Get file extensions supported by this parser
+   * @returns {string[]} Array of supported extensions
+   */
+  getSupportedExtensions() {
+    throw new Error('getSupportedExtensions() method must be implemented by subclass');
+  }
+}
+
+module.exports = BaseParser;
+
+/***/ }),
+
+/***/ 4748:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const BaseParser = __nccwpck_require__(7054);
+const ConfigService = __nccwpck_require__(1161);
+
+/**
+ * Parser for JavaScript package.json files
+ */
+class JavaScriptParser extends BaseParser {
+  parse(filePath, content) {
+    try {
+      return JSON.parse(content);
+    } catch (error) {
+      throw new Error(`Invalid JSON in ${filePath}: ${error.message}`);
+    }
+  }
+
+  extractVersion(data) {
+    if (!data.version) {
+      throw new Error('No version field found in package.json');
+    }
+    return data.version;
+  }
+
+  canHandle(filePath, content) {
+    return ConfigService.isFileForLanguage(filePath, 'js') && this._isValidJSON(content);
+  }
+
+  getSupportedExtensions() {
+    return ['.json'];
+  }
+
+  _isValidJSON(content) {
+    try {
+      JSON.parse(content);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+}
+
+module.exports = JavaScriptParser;
+
+/***/ }),
+
+/***/ 6013:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const BaseParser = __nccwpck_require__(7054);
+const ConfigService = __nccwpck_require__(1161);
+
+/**
+ * Parser for PHP composer.json files
+ */
+class PhpParser extends BaseParser {
+  parse(filePath, content) {
+    try {
+      return JSON.parse(content);
+    } catch (error) {
+      throw new Error(`Invalid JSON in ${filePath}: ${error.message}`);
+    }
+  }
+
+  extractVersion(data) {
+    if (!data.version) {
+      throw new Error('No version field found in composer.json');
+    }
+    return data.version;
+  }
+
+  canHandle(filePath, content) {
+    return ConfigService.isFileForLanguage(filePath, 'php') && this._isValidJSON(content);
+  }
+
+  getSupportedExtensions() {
+    return ['.json'];
+  }
+
+  _isValidJSON(content) {
+    try {
+      JSON.parse(content);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+}
+
+module.exports = PhpParser;
+
+/***/ }),
+
+/***/ 2031:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const BaseParser = __nccwpck_require__(7054);
+
+/**
+ * Parser for Python __init__.py files with __version__
+ */
+class PythonInitParser extends BaseParser {
+  parse(filePath, content) {
+    return {
+      _content: content,
+      _fileType: '__init__.py',
+      _filePath: filePath
+    };
+  }
+
+  extractVersion(data) {
+    const content = data._content;
+    const versionMatch = content.match(/__version__\s*=\s*['"]([^'"]+)['"]/);
+    if (!versionMatch) {
+      throw new Error('__version__ not found in __init__.py (looking for __version__ = "..." or __version__ = \'...\')');
+    }
+    return versionMatch[1];
+  }
+
+  canHandle(filePath, content) {
+    return (
+      filePath.includes('__init__.py') &&
+      /__version__\s*=\s*['"][^'"]+['"]/.test(content)
+    );
+  }
+
+  getSupportedExtensions() {
+    return ['.py'];
+  }
+}
+
+module.exports = PythonInitParser;
+
+/***/ }),
+
+/***/ 4342:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const BaseParser = __nccwpck_require__(7054);
+
+/**
+ * Parser for Python setup.py files
+ */
+class PythonSetupParser extends BaseParser {
+  parse(filePath, content) {
+    return {
+      _content: content,
+      _fileType: 'setup.py',
+      _filePath: filePath
+    };
+  }
+
+  extractVersion(data) {
+    const content = data._content;
+    const versionMatch = content.match(/version\s*=\s*['"]([^'"]+)['"]/);
+    if (!versionMatch) {
+      throw new Error('Version not found in setup.py (looking for version="..." or version=\'...\')');
+    }
+    return versionMatch[1];
+  }
+
+  canHandle(filePath, content) {
+    return (
+      filePath.includes('setup.py') &&
+      content.includes('setup(') &&
+      /version\s*=\s*['"][^'"]+['"]/.test(content)
+    );
+  }
+
+  getSupportedExtensions() {
+    return ['.py'];
+  }
+}
+
+module.exports = PythonSetupParser;
+
+/***/ }),
+
+/***/ 2617:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const BaseParser = __nccwpck_require__(7054);
+const TOML = __nccwpck_require__(5128);
+
+/**
+ * Parser for Python pyproject.toml files
+ */
+class PythonTomlParser extends BaseParser {
+  parse(filePath, content) {
+    try {
+      return TOML.parse(content);
+    } catch (error) {
+      throw new Error(`Invalid TOML in ${filePath}: ${error.message}`);
+    }
+  }
+
+  extractVersion(data) {
+    const version = data.project?.version || data.tool?.poetry?.version;
+    if (!version) {
+      throw new Error('No version field found in pyproject.toml (checked project.version and tool.poetry.version)');
+    }
+    return version;
+  }
+
+  canHandle(filePath, content) {
+    return (
+      (filePath.includes('pyproject.toml') || filePath.includes('.toml')) &&
+      (content.includes('[project]') || content.includes('[tool.poetry]'))
+    );
+  }
+
+  getSupportedExtensions() {
+    return ['.toml'];
+  }
+}
+
+module.exports = PythonTomlParser;
+
+/***/ }),
+
+/***/ 825:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const BaseParser = __nccwpck_require__(7054);
+const ConfigService = __nccwpck_require__(1161);
+const TOML = __nccwpck_require__(5128);
+
+/**
+ * Parser for Rust Cargo.toml files
+ */
+class RustParser extends BaseParser {
+  parse(filePath, content) {
+    try {
+      return TOML.parse(content);
+    } catch (error) {
+      throw new Error(`Invalid TOML in ${filePath}: ${error.message}`);
+    }
+  }
+
+  extractVersion(data) {
+    if (!data.package?.version) {
+      throw new Error('No version field found in [package] section of Cargo.toml');
+    }
+    return data.package.version;
+  }
+
+  canHandle(filePath, content) {
+    return ConfigService.isFileForLanguage(filePath, 'rust') && content.includes('[package]');
+  }
+
+  getSupportedExtensions() {
+    return ['.toml'];
+  }
+}
+
+module.exports = RustParser;
+
+/***/ }),
+
+/***/ 2591:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const github = __nccwpck_require__(3228);
+const { exec } = __nccwpck_require__(5236);
+
+/**
+ * Service for handling Git operations (tagging and committing)
+ */
+class GitService {
+  constructor(githubToken) {
+    this.octokit = github.getOctokit(githubToken);
+    this.githubToken = githubToken;
+  }
+
+  /**
+   * Create Git service instance from GitHub token
+   * @param {string} githubToken - GitHub token for authentication
+   * @returns {GitService} New GitService instance
+   * @throws {Error} If token is missing
+   */
+  static fromToken(githubToken) {
+    if (!githubToken) {
+      throw new Error('GitHub token is required for Git operations');
+    }
+    return new GitService(githubToken);
+  }
+
+  /**
+   * Create tag and commit for the new version
+   * @param {string} version - Version to tag
+   * @returns {Promise<void>}
+   * @throws {Error} If Git operations fail
+   */
+  async createTagAndCommit(version) {
+    try {
+      await this._createTag(version);
+      await this._commit();
+    } catch (error) {
+      throw new Error(`Git operations failed: ${error.message}`);
+    }
+  }
+
+  /**
+   * Create tag only (without commit)
+   * @param {string} version - Version to tag
+   * @returns {Promise<void>}
+   * @throws {Error} If tag creation fails
+   */
+  async createTag(version) {
+    try {
+      await this._createTag(version);
+    } catch (error) {
+      throw new Error(`Tag creation failed: ${error.message}`);
+    }
+  }
+
+  /**
+   * Internal method to create a Git tag via GitHub API
+   * @private
+   * @param {string} version - Version to tag
+   * @returns {Promise<void>}
+   * @throws {Error} If tag creation fails
+   */
+  async _createTag(version) {
+    const tagRsp = await this.octokit.rest.repos.createRelease({
+      ...github.context.repo,
+      tag_name: `v${version}`,
+    });
+
+    if (tagRsp.status !== 201) {
+      throw new Error(`Failed to create tag: ${JSON.stringify(tagRsp)}`);
+    }
+  }
+
+  /**
+   * Internal method to commit changes
+   * @private
+   * @returns {Promise<void>}
+   * @throws {Error} If commit fails
+   */
+  async _commit() {
+    const branch = github.context.ref.split('/').slice(2).join('/');
+    
+    await exec('git', ['add', '-A']);
+    await exec('git', ['config', '--local', 'user.name', 'Conecta Turismo CI']);
+    await exec('git', ['config', '--local', 'user.email', 'sergio.garcia.seo@gmail.com']);
+    await exec('git', ['commit', '--no-verify', '-m', 'CI: Publish new version']);
+    await exec('git', ['push', 'origin', branch]);
+  }
+
+  /**
+   * Commit changes only (without tagging)
+   * @returns {Promise<void>}
+   * @throws {Error} If commit fails
+   */
+  async commit() {
+    try {
+      await this._commit();
+    } catch (error) {
+      throw new Error(`Commit failed: ${error.message}`);
+    }
+  }
+
+  /**
+   * Check if GitHub token is valid
+   * @returns {boolean} True if token exists
+   */
+  hasValidToken() {
+    return !!this.githubToken;
+  }
+}
+
+module.exports = GitService;
+
+/***/ }),
+
+/***/ 1335:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const core = __nccwpck_require__(7484);
+const ConfigService = __nccwpck_require__(1161);
+
+/**
+ * Service for handling GitHub Actions inputs and validation
+ */
+class InputService {
+  constructor() {
+    this.inputs = null;
+  }
+
+  /**
+   * Parse and validate all GitHub Actions inputs
+   * @returns {object} Validated inputs object
+   * @throws {Error} If any input is invalid
+   */
+  parseInputs() {
+    if (this.inputs) {
+      return this.inputs; // Cache parsed inputs
+    }
+
+    const lang = core.getInput('lang') || 'js';
+    const bumpLvl = core.getInput('bumpLvl') || 'patch';
+    const path = core.getInput('path');
+    const save = core.getBooleanInput('save') || false;
+    const githubToken = core.getInput('githubToken');
+    const workspacePath = process.env.GITHUB_WORKSPACE || './';
+
+    // Validate inputs
+    this._validateLanguage(lang);
+    this._validateBumpLevel(bumpLvl);
+    this._validateWorkspacePath(workspacePath);
+    this._validateSaveOperation(save, githubToken);
+
+    this.inputs = {
+      lang,
+      bumpLvl,
+      path,
+      save,
+      githubToken,
+      workspacePath
+    };
+
+    return this.inputs;
+  }
+
+  /**
+   * Get workspace path
+   * @returns {string} Workspace path
+   */
+  getWorkspacePath() {
+    return process.env.GITHUB_WORKSPACE || './';
+  }
+
+  /**
+   * Get language with fallback to default
+   * @returns {string} Language identifier
+   */
+  getLanguage() {
+    return core.getInput('lang') || 'js';
+  }
+
+  /**
+   * Get bump level with fallback to default
+   * @returns {string} Bump level
+   */
+  getBumpLevel() {
+    return core.getInput('bumpLvl') || 'patch';
+  }
+
+  /**
+   * Get custom path if specified
+   * @returns {string|null} Custom path or null
+   */
+  getCustomPath() {
+    const path = core.getInput('path');
+    return path || null;
+  }
+
+  /**
+   * Check if save operation is requested
+   * @returns {boolean} True if save is requested
+   */
+  shouldSave() {
+    return core.getBooleanInput('save') || false;
+  }
+
+  /**
+   * Get GitHub token
+   * @returns {string|null} GitHub token or null
+   */
+  getGitHubToken() {
+    return core.getInput('githubToken') || null;
+  }
+
+  /**
+   * Validate language input
+   * @private
+   * @param {string} lang - Language to validate
+   * @throws {Error} If language is not supported
+   */
+  _validateLanguage(lang) {
+    if (!ConfigService.isLanguageSupported(lang)) {
+      const supported = ConfigService.SUPPORTED_LANGUAGES.join(', ');
+      throw new Error(`Language '${lang}' is not supported. Supported languages: ${supported}`);
+    }
+  }
+
+  /**
+   * Validate bump level input
+   * @private
+   * @param {string} bumpLvl - Bump level to validate
+   * @throws {Error} If bump level is not supported
+   */
+  _validateBumpLevel(bumpLvl) {
+    if (!ConfigService.isBumpLevelSupported(bumpLvl)) {
+      const supported = ConfigService.SUPPORTED_BUMP_LEVELS.join(', ');
+      throw new Error(`Bump level '${bumpLvl}' is not supported. Supported levels: ${supported}`);
+    }
+  }
+
+  /**
+   * Validate workspace path
+   * @private
+   * @param {string} workspacePath - Workspace path to validate
+   * @throws {Error} If workspace path is not set
+   */
+  _validateWorkspacePath(workspacePath) {
+    if (!workspacePath || workspacePath === './') {
+      // Only warn for local development, don't throw error
+      core.warning('GITHUB_WORKSPACE environment variable is not set. Using current directory.');
+    }
+  }
+
+  /**
+   * Validate save operation requirements
+   * @private
+   * @param {boolean} save - Whether save is requested
+   * @param {string} githubToken - GitHub token
+   * @throws {Error} If save is requested but token is missing
+   */
+  _validateSaveOperation(save, githubToken) {
+    if (save && !githubToken) {
+      throw new Error('githubToken is required when save=true');
+    }
+  }
+}
+
+module.exports = InputService;
+
+/***/ }),
+
+/***/ 2038:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const core = __nccwpck_require__(7484);
+
+/**
+ * Service for handling GitHub Actions outputs and logging
+ */
+class OutputService {
+  /**
+   * Set the version output for GitHub Actions
+   * @param {string} version - Version to output
+   */
+  static setVersionOutput(version) {
+    core.setOutput('version', version);
+  }
+
+  /**
+   * Log success message with version
+   * @param {string} version - Version that was set
+   * @param {string} filePath - Path to the file that was updated
+   */
+  static logSuccess(version, filePath) {
+    core.info(`✅ Version updated successfully!`);
+    core.info(`📦 New version: ${version}`);
+    core.info(`📄 File: ${filePath}`);
+  }
+
+  /**
+   * Log version bump information
+   * @param {string} oldVersion - Previous version
+   * @param {string} newVersion - New version
+   * @param {string} bumpLevel - Bump level used
+   */
+  static logVersionBump(oldVersion, newVersion, bumpLevel) {
+    core.info(`🔄 Version bump: ${oldVersion} → ${newVersion} (${bumpLevel})`);
+  }
+
+  /**
+   * Log file operation information
+   * @param {string} filePath - Path to the file
+   * @param {string} operation - Operation performed (read/write)
+   */
+  static logFileOperation(filePath, operation) {
+    core.info(`📁 ${operation}: ${filePath}`);
+  }
+
+  /**
+   * Log Git operations
+   * @param {string} version - Version for Git operations
+   * @param {boolean} tagged - Whether tag was created
+   * @param {boolean} committed - Whether commit was made
+   */
+  static logGitOperations(version, tagged, committed) {
+    if (tagged) {
+      core.info(`🏷️  Tag created: v${version}`);
+    }
+    if (committed) {
+      core.info(`📝 Changes committed`);
+    }
+  }
+
+  /**
+   * Log warning message
+   * @param {string} message - Warning message
+   */
+  static logWarning(message) {
+    core.warning(`⚠️  ${message}`);
+  }
+
+  /**
+   * Log info message
+   * @param {string} message - Info message
+   */
+  static logInfo(message) {
+    core.info(`ℹ️  ${message}`);
+  }
+
+  /**
+   * Log debug message (only in debug mode)
+   * @param {string} message - Debug message
+   */
+  static logDebug(message) {
+    core.debug(`🔍 ${message}`);
+  }
+
+  /**
+   * Set failed status and error message
+   * @param {string|Error} error - Error message or Error object
+   */
+  static setFailed(error) {
+    const message = error instanceof Error ? error.message : error;
+    core.setFailed(`❌ ${message}`);
+  }
+
+  /**
+   * Log dry run information
+   * @param {string} currentVersion - Current version
+   * @param {string} nextVersion - What the next version would be
+   * @param {string} bumpLevel - Bump level
+   */
+  static logDryRun(currentVersion, nextVersion, bumpLevel) {
+    core.info(`🔮 Dry run mode - no changes will be saved`);
+    core.info(`📊 Current version: ${currentVersion}`);
+    core.info(`📈 Next version would be: ${nextVersion} (${bumpLevel})`);
+  }
+}
+
+module.exports = OutputService;
+
+/***/ }),
+
+/***/ 9062:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const { join } = __nccwpck_require__(6928);
+const { existsSync } = __nccwpck_require__(9896);
+const ConfigService = __nccwpck_require__(1161);
+
+/**
+ * Service for resolving file paths based on language and user input
+ */
+class PathResolverService {
+  /**
+   * Resolve the target file path
+   * @param {string} lang - Programming language
+   * @param {string} workspacePath - Workspace root path
+   * @param {string|null} customPath - User-provided custom path
+   * @returns {string} Resolved absolute file path
+   * @throws {Error} If file cannot be resolved or doesn't exist
+   */
+  static resolveFilePath(lang, workspacePath, customPath = null) {
+    let relativePath;
+
+    if (customPath) {
+      // User provided explicit path
+      relativePath = customPath;
+    } else if (lang === 'python') {
+      // Python requires special auto-detection
+      relativePath = PathResolverService._resolvePythonFile(workspacePath);
+    } else {
+      // Use default file for other languages
+      relativePath = ConfigService.getDefaultPackageFile(lang);
+    }
+
+    const absolutePath = join(workspacePath, relativePath);
+
+    // Validate file exists
+    if (!existsSync(absolutePath)) {
+      throw new Error(`Package file not found: ${absolutePath}`);
+    }
+
+    return absolutePath;
+  }
+
+  /**
+   * Auto-detect Python project file
+   * @private
+   * @param {string} workspacePath - Workspace root path
+   * @returns {string} Relative path to Python file
+   * @throws {Error} If no Python file is found
+   */
+  static _resolvePythonFile(workspacePath) {
+    const candidates = ConfigService.PYTHON_FILE_CANDIDATES;
+    
+    for (const candidate of candidates) {
+      const fullPath = join(workspacePath, candidate);
+      if (existsSync(fullPath)) {
+        return candidate;
+      }
+    }
+
+    // If no files found, return default and let the error handling deal with it
+    return ConfigService.getDefaultPackageFile('python');
+  }
+
+  /**
+   * Get relative path from absolute path
+   * @param {string} absolutePath - Absolute file path
+   * @param {string} workspacePath - Workspace root path
+   * @returns {string} Relative path from workspace
+   */
+  static getRelativePath(absolutePath, workspacePath) {
+    return absolutePath.replace(workspacePath, '').replace(/^[\/\\]/, '');
+  }
+
+  /**
+   * Check if a file exists
+   * @param {string} filePath - Path to check
+   * @returns {boolean} True if file exists
+   */
+  static fileExists(filePath) {
+    return existsSync(filePath);
+  }
+
+  /**
+   * Get available Python files in workspace
+   * @param {string} workspacePath - Workspace root path
+   * @returns {string[]} Array of found Python files
+   */
+  static getAvailablePythonFiles(workspacePath) {
+    const candidates = ConfigService.PYTHON_FILE_CANDIDATES;
+    const found = [];
+    
+    for (const candidate of candidates) {
+      const fullPath = join(workspacePath, candidate);
+      if (existsSync(fullPath)) {
+        found.push(candidate);
+      }
+    }
+    
+    return found;
+  }
+}
+
+module.exports = PathResolverService;
+
+/***/ }),
+
+/***/ 9982:
+/***/ ((module) => {
+
+/**
+ * Abstract base class for version file writers
+ * Defines the interface that all language writers must implement
+ */
+class BaseWriter {
+  /**
+   * Write updated data back to file
+   * @param {string} filePath - Path to the file
+   * @param {object} data - Data to write
+   * @param {string} newVersion - New version to set
+   */
+  write(filePath, data, newVersion) {
+    throw new Error('write() method must be implemented by subclass');
+  }
+
+  /**
+   * Check if this writer can handle the given file type
+   * @param {string} filePath - Path to the file
+   * @param {object} data - Parsed data
+   * @returns {boolean} True if writer can handle the file
+   */
+  canHandle(filePath, data) {
+    throw new Error('canHandle() method must be implemented by subclass');
+  }
+
+  /**
+   * Update version in data structure (in memory)
+   * @param {object} data - Data structure to update
+   * @param {string} newVersion - New version to set
+   * @returns {object} Updated data structure
+   */
+  updateVersion(data, newVersion) {
+    throw new Error('updateVersion() method must be implemented by subclass');
+  }
+}
+
+module.exports = BaseWriter;
+
+/***/ }),
+
+/***/ 3108:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const BaseWriter = __nccwpck_require__(9982);
+const fs = __nccwpck_require__(9896);
+
+/**
+ * Writer for JavaScript package.json files
+ */
+class JavaScriptWriter extends BaseWriter {
+  write(filePath, data, newVersion) {
+    const updatedData = this.updateVersion(data, newVersion);
+    const jsonString = JSON.stringify(updatedData, null, 2);
+    fs.writeFileSync(filePath, jsonString + '\n');
+  }
+
+  canHandle(filePath, data) {
+    return filePath.includes('package.json') && typeof data === 'object' && !data._fileType;
+  }
+
+  updateVersion(data, newVersion) {
+    return {
+      ...data,
+      version: newVersion
+    };
+  }
+}
+
+module.exports = JavaScriptWriter;
+
+/***/ }),
+
+/***/ 8933:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const BaseWriter = __nccwpck_require__(9982);
+const fs = __nccwpck_require__(9896);
+
+/**
+ * Writer for PHP composer.json files
+ */
+class PhpWriter extends BaseWriter {
+  write(filePath, data, newVersion) {
+    const updatedData = this.updateVersion(data, newVersion);
+    const jsonString = JSON.stringify(updatedData, null, 2);
+    fs.writeFileSync(filePath, jsonString + '\n');
+  }
+
+  canHandle(filePath, data) {
+    return filePath.includes('composer.json') && typeof data === 'object' && !data._fileType;
+  }
+
+  updateVersion(data, newVersion) {
+    return {
+      ...data,
+      version: newVersion
+    };
+  }
+}
+
+module.exports = PhpWriter;
+
+/***/ }),
+
+/***/ 4519:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const BaseWriter = __nccwpck_require__(9982);
+const fs = __nccwpck_require__(9896);
+
+/**
+ * Writer for Python __init__.py files
+ */
+class PythonInitWriter extends BaseWriter {
+  write(filePath, data, newVersion) {
+    const updatedContent = this.updateVersionInContent(data._content, newVersion);
+    fs.writeFileSync(filePath, updatedContent);
+  }
+
+  canHandle(filePath, data) {
+    return data._fileType === '__init__.py';
+  }
+
+  updateVersion(data, newVersion) {
+    return {
+      ...data,
+      version: newVersion,
+      _content: this.updateVersionInContent(data._content, newVersion)
+    };
+  }
+
+  updateVersionInContent(content, newVersion) {
+    return content.replace(
+      /__version__\s*=\s*['"][^'"]+['"]/,
+      `__version__ = '${newVersion}'`
+    );
+  }
+}
+
+module.exports = PythonInitWriter;
+
+/***/ }),
+
+/***/ 3670:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const BaseWriter = __nccwpck_require__(9982);
+const fs = __nccwpck_require__(9896);
+
+/**
+ * Writer for Python setup.py files
+ */
+class PythonSetupWriter extends BaseWriter {
+  write(filePath, data, newVersion) {
+    const updatedContent = this.updateVersionInContent(data._content, newVersion);
+    fs.writeFileSync(filePath, updatedContent);
+  }
+
+  canHandle(filePath, data) {
+    return data._fileType === 'setup.py';
+  }
+
+  updateVersion(data, newVersion) {
+    return {
+      ...data,
+      version: newVersion,
+      _content: this.updateVersionInContent(data._content, newVersion)
+    };
+  }
+
+  updateVersionInContent(content, newVersion) {
+    return content.replace(
+      /version\s*=\s*['"][^'"]+['"]/,
+      `version='${newVersion}'`
+    );
+  }
+}
+
+module.exports = PythonSetupWriter;
+
+/***/ }),
+
+/***/ 4529:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const BaseWriter = __nccwpck_require__(9982);
+const fs = __nccwpck_require__(9896);
+const TOML = __nccwpck_require__(5128);
+
+/**
+ * Writer for Python pyproject.toml files
+ */
+class PythonTomlWriter extends BaseWriter {
+  write(filePath, data, newVersion) {
+    const updatedData = this.updateVersion(data, newVersion);
+    const tomlString = TOML.stringify(updatedData, {
+      newline: '\n',
+      newlineAround: 'section',
+    });
+    fs.writeFileSync(filePath, tomlString + '\n');
+  }
+
+  canHandle(filePath, data) {
+    return (
+      (filePath.includes('pyproject.toml') || filePath.includes('.toml')) &&
+      (data.project || data.tool?.poetry) &&
+      !data._fileType
+    );
+  }
+
+  updateVersion(data, newVersion) {
+    const updatedData = { ...data };
+    
+    if (updatedData.project) {
+      updatedData.project = {
+        ...updatedData.project,
+        version: newVersion
+      };
+    } else if (updatedData.tool?.poetry) {
+      updatedData.tool = {
+        ...updatedData.tool,
+        poetry: {
+          ...updatedData.tool.poetry,
+          version: newVersion
+        }
+      };
+    }
+    
+    return updatedData;
+  }
+}
+
+module.exports = PythonTomlWriter;
+
+/***/ }),
+
+/***/ 4449:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const BaseWriter = __nccwpck_require__(9982);
+const fs = __nccwpck_require__(9896);
+const TOML = __nccwpck_require__(5128);
+
+/**
+ * Writer for Rust Cargo.toml files
+ */
+class RustWriter extends BaseWriter {
+  write(filePath, data, newVersion) {
+    const updatedData = this.updateVersion(data, newVersion);
+    const tomlString = TOML.stringify(updatedData, {
+      newline: '\n',
+      newlineAround: 'section',
+    });
+    fs.writeFileSync(filePath, tomlString + '\n');
+  }
+
+  canHandle(filePath, data) {
+    return filePath.includes('Cargo.toml') && data.package;
+  }
+
+  updateVersion(data, newVersion) {
+    return {
+      ...data,
+      package: {
+        ...data.package,
+        version: newVersion
+      }
+    };
+  }
+}
+
+module.exports = RustWriter;
 
 /***/ }),
 
@@ -36374,7 +37884,7 @@ module.exports = require("stream/web");
 
 /***/ }),
 
-/***/ 3193:
+/***/ 5574:
 /***/ ((module) => {
 
 "use strict";

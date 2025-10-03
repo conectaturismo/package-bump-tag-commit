@@ -21,57 +21,50 @@
 const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
-const PackageVersion = require('./package-version');
+// Using new modular API instead of legacy wrapper
+const { PackageVersion, config: { ConfigService } } = require('./src');
 
-// Configuration
-const SUPPORTED_LANGUAGES = ['js', 'rust', 'php', 'python'];
-const BUMP_LEVELS = ['patch', 'minor', 'major', 'hotfix', 'none'];
+// Configuration from ConfigService (single source of truth)
+const SUPPORTED_LANGUAGES = ConfigService.SUPPORTED_LANGUAGES;
+const BUMP_LEVELS = ConfigService.SUPPORTED_BUMP_LEVELS;
 
 // Test cases configuration
-const TEST_CASES = [
-  {
-    name: 'JavaScript (package.json)',
-    lang: 'js',
-    file: 'examples/package.json',
-    expectedVersion: '1.0.0',
-    testBumps: ['patch', 'minor', 'major']
-  },
-  {
-    name: 'Rust (Cargo.toml)',
-    lang: 'rust',
-    file: 'examples/Cargo.toml',
-    expectedVersion: '1.0.0',
-    testBumps: ['patch', 'minor', 'major']
-  },
-  {
-    name: 'PHP (composer.json)',
-    lang: 'php',
-    file: 'examples/composer.json',
-    expectedVersion: '1.0.0',
-    testBumps: ['patch', 'minor', 'major', 'hotfix']
-  },
-  {
-    name: 'Python (pyproject.toml)',
-    lang: 'python',
-    file: 'examples/pyproject.toml',
-    expectedVersion: '1.0.0',
-    testBumps: ['patch', 'minor', 'major']
-  },
-  {
-    name: 'Python (setup.py)',
-    lang: 'python',
-    file: 'examples/setup.py',
-    expectedVersion: '1.0.0',
-    testBumps: ['patch', 'minor', 'major']
-  },
-  {
-    name: 'Python (__init__.py)',
-    lang: 'python',
-    file: 'examples/__init__.py',
-    expectedVersion: '1.0.0',
-    testBumps: ['patch', 'minor']
-  }
-];
+// Generate test cases from ConfigService configuration
+const TEST_CASES = [];
+
+// Generate test cases dynamically from ConfigService
+SUPPORTED_LANGUAGES.forEach(lang => {
+  const patterns = ConfigService.getLanguageFilePatterns(lang);
+  
+  patterns.forEach(pattern => {
+    const fileName = `examples/${ConfigService.getDefaultPackageFile(lang)}`;
+    const testBumps = ConfigService.getTestBumps(lang, pattern);
+    
+    // Handle multiple Python file formats
+    if (lang === 'python' && patterns.length > 1) {
+      const specificFile = pattern === 'pyproject.toml' ? 'examples/pyproject.toml' :
+                          pattern === 'setup.py' ? 'examples/setup.py' :
+                          pattern === '__init__.py' ? 'examples/__init__.py' : fileName;
+      
+      TEST_CASES.push({
+        name: `Python (${pattern})`,
+        lang: lang,
+        file: specificFile,
+        expectedVersion: '1.0.0',
+        testBumps: ConfigService.getTestBumps(lang, pattern)
+      });
+    } else if (lang !== 'python') {
+      // For non-Python languages, create one test case
+      TEST_CASES.push({
+        name: `${lang.charAt(0).toUpperCase() + lang.slice(1)} (${ConfigService.getDefaultPackageFile(lang)})`,
+        lang: lang,
+        file: fileName,
+        expectedVersion: '1.0.0',
+        testBumps: testBumps
+      });
+    }
+  });
+});
 
 // Parse command line arguments
 const args = process.argv.slice(2);
@@ -112,10 +105,9 @@ class IntegrationTester {
     
     const requiredFiles = [
       'index.js',
-      'package-version.js',
-      'git-cmd.js',
       'package.json',
-      'action.yml'
+      'action.yml',
+      'src/index.js'  // Validating new modular system
     ];
 
     for (const file of requiredFiles) {
