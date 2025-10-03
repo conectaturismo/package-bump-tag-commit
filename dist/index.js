@@ -36191,6 +36191,7 @@ class PackageVersion {
     const writerFactory = new WriterFactory();
 
     let parser;
+    let writer;
     if (lang) {
       parser = parserFactory.getParserByLanguage(lang, filePath, content);
     } else {
@@ -36199,7 +36200,12 @@ class PackageVersion {
 
     const data = parser.parse(filePath, content);
     const version = parser.extractVersion(data);
-    const writer = writerFactory.getWriter(filePath, data);
+    
+    if (lang) {
+      writer = writerFactory.getWriterByLanguage(lang, filePath, data);
+    } else {
+      writer = writerFactory.getWriter(filePath, data);
+    }
 
     return new PackageVersion(filePath, data, version, parser, writer);
   }
@@ -36362,7 +36368,7 @@ class ConfigService {
    * Supported programming languages
    */
   static get SUPPORTED_LANGUAGES() {
-    return ['js', 'rust', 'php', 'python'];
+    return ['js', 'rust', 'php', 'python', 'go'];
   }
 
   /**
@@ -36373,7 +36379,8 @@ class ConfigService {
       js: 'package.json',
       rust: 'Cargo.toml', 
       php: 'composer.json',
-      python: 'pyproject.toml'
+      python: 'pyproject.toml',
+      go: 'go.mod'
     };
   }
 
@@ -36385,7 +36392,8 @@ class ConfigService {
       js: ['package.json'],
       rust: ['Cargo.toml'],
       php: ['composer.json'],
-      python: ['pyproject.toml', 'setup.py', '__init__.py']
+      python: ['pyproject.toml', 'setup.py', '__init__.py'],
+      go: ['go.mod']
     };
   }
 
@@ -36401,7 +36409,8 @@ class ConfigService {
         'pyproject.toml': ['patch', 'minor', 'major'],
         'setup.py': ['patch', 'minor', 'major'],
         '__init__.py': ['patch', 'minor']
-      }
+      },
+      go: ['patch', 'minor', 'major']
     };
   }
 
@@ -36502,6 +36511,7 @@ const PhpParser = __nccwpck_require__(6013);
 const PythonTomlParser = __nccwpck_require__(2617);
 const PythonSetupParser = __nccwpck_require__(4342);
 const PythonInitParser = __nccwpck_require__(2031);
+const GoParser = __nccwpck_require__(1309);
 const ConfigService = __nccwpck_require__(1161);
 
 /**
@@ -36515,7 +36525,8 @@ class ParserFactory {
       new PhpParser(),
       new PythonTomlParser(),
       new PythonSetupParser(),
-      new PythonInitParser()
+      new PythonInitParser(),
+      new GoParser()
     ];
   }
 
@@ -36564,6 +36575,8 @@ class ParserFactory {
           // Default to TOML for Python
           return new PythonTomlParser();
         }
+      case 'go':
+        return new GoParser();
       default:
         throw new Error(`Unsupported language: ${lang}`);
     }
@@ -36591,6 +36604,7 @@ const PhpWriter = __nccwpck_require__(8933);
 const PythonTomlWriter = __nccwpck_require__(4529);
 const PythonSetupWriter = __nccwpck_require__(3670);
 const PythonInitWriter = __nccwpck_require__(4519);
+const GoWriter = __nccwpck_require__(917);
 
 /**
  * Factory class for creating appropriate writers
@@ -36603,7 +36617,8 @@ class WriterFactory {
       new PhpWriter(),
       new PythonTomlWriter(),
       new PythonSetupWriter(),
-      new PythonInitWriter()
+      new PythonInitWriter(),
+      new GoWriter()
     ];
   }
 
@@ -36622,6 +36637,41 @@ class WriterFactory {
     }
     
     throw new Error(`No writer found for file: ${filePath}`);
+  }
+
+  /**
+   * Get writer by language name
+   * @param {string} lang - Language identifier (js, rust, php, python, go)
+   * @param {string} filePath - Path to the file (for Python disambiguation)
+   * @param {Object} data - Parsed data (for Python disambiguation)
+   * @returns {BaseWriter} The appropriate writer
+   * @throws {Error} If language is not supported
+   */
+  getWriterByLanguage(lang, filePath = '', data = null) {
+    switch (lang) {
+      case 'js':
+        return new JavaScriptWriter();
+      case 'rust':
+        return new RustWriter();
+      case 'php':
+        return new PhpWriter();
+      case 'python':
+        // For Python, we need to determine the specific format
+        if (filePath.includes('.toml') || (data && (data.content && data.content.includes('[project]') || data.content && data.content.includes('[tool.poetry]')))) {
+          return new PythonTomlWriter();
+        } else if (filePath.includes('setup.py') || (data && data.content && data.content.includes('setup('))) {
+          return new PythonSetupWriter();
+        } else if (filePath.includes('__init__.py') || (data && data.content && data.content.includes('__version__'))) {
+          return new PythonInitWriter();
+        } else {
+          // Default to TOML for Python
+          return new PythonTomlWriter();
+        }
+      case 'go':
+        return new GoWriter();
+      default:
+        throw new Error(`Unsupported language: ${lang}`);
+    }
   }
 }
 
@@ -36676,6 +36726,100 @@ class BaseParser {
 }
 
 module.exports = BaseParser;
+
+/***/ }),
+
+/***/ 1309:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const BaseParser = __nccwpck_require__(7054);
+const ConfigService = __nccwpck_require__(1161);
+
+/**
+ * Parser for Go go.mod files
+ * Handles parsing of Go module files and version extraction
+ */
+class GoParser extends BaseParser {
+  /**
+   * Parse go.mod file content
+   * @param {string} filePath - Path to the go.mod file
+   * @param {string} content - File content
+   * @returns {Object} Parsed data structure
+   */
+  parse(filePath, content) {
+    const lines = content.split('\n');
+    const data = {
+      module: '',
+      goVersion: '',
+      version: '0.1.0', // Default version
+      dependencies: [],
+      lines: lines,
+      originalContent: content
+    };
+
+    // Parse module declaration
+    const moduleLine = lines.find(line => line.trim().startsWith('module '));
+    if (moduleLine) {
+      data.module = moduleLine.replace(/^module\s+/, '').trim();
+    }
+
+    // Parse go version
+    const goVersionLine = lines.find(line => line.trim().startsWith('go '));
+    if (goVersionLine) {
+      data.goVersion = goVersionLine.replace(/^go\s+/, '').trim();
+    }
+
+    // Look for version comment (our convention)
+    const versionLine = lines.find(line => 
+      line.includes('// version:') || line.includes('//version:')
+    );
+    if (versionLine) {
+      const versionMatch = versionLine.match(/\/\/\s*version:\s*(.+)/);
+      if (versionMatch) {
+        data.version = versionMatch[1].trim();
+      }
+    }
+
+    return data;
+  }
+
+  /**
+   * Extract version from parsed data
+   * @param {Object} data - Parsed data from parse()
+   * @returns {string} Version string
+   */
+  extractVersion(data) {
+    return data.version || '0.1.0';
+  }
+
+  /**
+   * Check if this parser can handle the given file
+   * @param {string} filePath - File path to check
+   * @returns {boolean} True if can handle
+   */
+  canHandle(filePath) {
+    return this.constructor.name === 'GoParser' && 
+           ConfigService.isFileForLanguage('go', filePath);
+  }
+
+  /**
+   * Get supported file extensions for Go
+   * @returns {Array<string>} Array of supported extensions
+   */
+  getSupportedExtensions() {
+    return ['.mod'];
+  }
+
+  /**
+   * Get supported file names for Go
+   * @returns {Array<string>} Array of supported file names
+   */
+  getSupportedFileNames() {
+    return ['go.mod'];
+  }
+}
+
+module.exports = GoParser;
 
 /***/ }),
 
@@ -37470,6 +37614,104 @@ class BaseWriter {
 }
 
 module.exports = BaseWriter;
+
+/***/ }),
+
+/***/ 917:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const BaseWriter = __nccwpck_require__(9982);
+const ConfigService = __nccwpck_require__(1161);
+const fs = __nccwpck_require__(9896);
+
+/**
+ * Writer for Go go.mod files
+ * Handles writing updated version information back to go.mod files
+ */
+class GoWriter extends BaseWriter {
+  /**
+   * Write updated version to go.mod file
+   * @param {string} filePath - Path to the go.mod file
+   * @param {Object} data - Parsed data from GoParser
+   * @param {string} newVersion - New version to write
+   */
+  write(filePath, data, newVersion) {
+    const updatedContent = this.updateVersion(data, newVersion);
+    fs.writeFileSync(filePath, updatedContent, 'utf8');
+  }
+
+  /**
+   * Update version in the data structure
+   * @param {Object} data - Parsed data from GoParser
+   * @param {string} newVersion - New version string
+   * @returns {string} Updated file content
+   */
+  updateVersion(data, newVersion) {
+    const lines = [...data.lines];
+    let versionLineIndex = -1;
+
+    // Look for existing version comment
+    versionLineIndex = lines.findIndex(line => 
+      line.includes('// version:') || line.includes('//version:')
+    );
+
+    const versionComment = `// version: ${newVersion}`;
+
+    if (versionLineIndex !== -1) {
+      // Update existing version line
+      lines[versionLineIndex] = versionComment;
+    } else {
+      // Add version comment after module declaration
+      const moduleLineIndex = lines.findIndex(line => 
+        line.trim().startsWith('module ')
+      );
+
+      if (moduleLineIndex !== -1) {
+        // Insert after module line
+        lines.splice(moduleLineIndex + 1, 0, versionComment);
+      } else {
+        // If no module line found, add at the beginning
+        lines.unshift(versionComment);
+      }
+    }
+
+    // Remove any trailing empty lines and ensure single trailing newline
+    while (lines.length > 0 && lines[lines.length - 1].trim() === '') {
+      lines.pop();
+    }
+    
+    return lines.join('\n') + '\n';
+  }
+
+  /**
+   * Check if this writer can handle the given file and data
+   * @param {string} filePath - File path to check
+   * @param {Object} data - Parsed data (optional)
+   * @returns {boolean} True if can handle
+   */
+  canHandle(filePath, data = null) {
+    return this.constructor.name === 'GoWriter' && 
+           ConfigService.isFileForLanguage('go', filePath);
+  }
+
+  /**
+   * Get supported file extensions for Go
+   * @returns {Array<string>} Array of supported extensions
+   */
+  getSupportedExtensions() {
+    return ['.mod'];
+  }
+
+  /**
+   * Get supported file names for Go
+   * @returns {Array<string>} Array of supported file names
+   */
+  getSupportedFileNames() {
+    return ['go.mod'];
+  }
+}
+
+module.exports = GoWriter;
 
 /***/ }),
 

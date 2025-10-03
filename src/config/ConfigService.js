@@ -6,7 +6,7 @@ class ConfigService {
    * Supported programming languages
    */
   static get SUPPORTED_LANGUAGES() {
-    return ['js', 'rust', 'php', 'python'];
+    return ['js', 'rust', 'php', 'python', 'go'];
   }
 
   /**
@@ -17,7 +17,8 @@ class ConfigService {
       js: 'package.json',
       rust: 'Cargo.toml', 
       php: 'composer.json',
-      python: 'pyproject.toml'
+      python: 'pyproject.toml',
+      go: 'go.mod'
     };
   }
 
@@ -29,7 +30,8 @@ class ConfigService {
       js: ['package.json'],
       rust: ['Cargo.toml'],
       php: ['composer.json'],
-      python: ['pyproject.toml', 'setup.py', '__init__.py']
+      python: ['pyproject.toml', 'setup.py', '__init__.py'],
+      go: ['go.mod']
     };
   }
 
@@ -45,7 +47,8 @@ class ConfigService {
         'pyproject.toml': ['patch', 'minor', 'major'],
         'setup.py': ['patch', 'minor', 'major'],
         '__init__.py': ['patch', 'minor']
-      }
+      },
+      go: ['patch', 'minor', 'major']
     };
   }
 

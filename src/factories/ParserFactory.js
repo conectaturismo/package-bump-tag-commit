@@ -4,6 +4,7 @@ const PhpParser = require('../parsers/PhpParser');
 const PythonTomlParser = require('../parsers/PythonTomlParser');
 const PythonSetupParser = require('../parsers/PythonSetupParser');
 const PythonInitParser = require('../parsers/PythonInitParser');
+const GoParser = require('../parsers/GoParser');
 const ConfigService = require('../config/ConfigService');
 
 /**
@@ -17,7 +18,8 @@ class ParserFactory {
       new PhpParser(),
       new PythonTomlParser(),
       new PythonSetupParser(),
-      new PythonInitParser()
+      new PythonInitParser(),
+      new GoParser()
     ];
   }
 
@@ -66,6 +68,8 @@ class ParserFactory {
           // Default to TOML for Python
           return new PythonTomlParser();
         }
+      case 'go':
+        return new GoParser();
       default:
         throw new Error(`Unsupported language: ${lang}`);
     }

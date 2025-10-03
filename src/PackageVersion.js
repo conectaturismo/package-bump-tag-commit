@@ -33,6 +33,7 @@ class PackageVersion {
     const writerFactory = new WriterFactory();
 
     let parser;
+    let writer;
     if (lang) {
       parser = parserFactory.getParserByLanguage(lang, filePath, content);
     } else {
@@ -41,7 +42,12 @@ class PackageVersion {
 
     const data = parser.parse(filePath, content);
     const version = parser.extractVersion(data);
-    const writer = writerFactory.getWriter(filePath, data);
+    
+    if (lang) {
+      writer = writerFactory.getWriterByLanguage(lang, filePath, data);
+    } else {
+      writer = writerFactory.getWriter(filePath, data);
+    }
 
     return new PackageVersion(filePath, data, version, parser, writer);
   }

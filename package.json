@@ -12,7 +12,8 @@
     "test:php": "node test-integration.js --lang=php",
     "test:python": "node test-integration.js --lang=python",
     "test:js": "node test-integration.js --lang=js",
-    "test:rust": "node test-integration.js --lang=rust"
+    "test:rust": "node test-integration.js --lang=rust",
+    "test:go": "node test-integration.js --lang=go"
   },
   "license": "MIT",
   "dependencies": {

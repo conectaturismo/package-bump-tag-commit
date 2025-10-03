@@ -24,6 +24,7 @@ const PhpParser = require('./parsers/PhpParser');
 const PythonTomlParser = require('./parsers/PythonTomlParser');
 const PythonSetupParser = require('./parsers/PythonSetupParser');
 const PythonInitParser = require('./parsers/PythonInitParser');
+const GoParser = require('./parsers/GoParser');
 
 // Individual writers (for advanced usage)
 const JavaScriptWriter = require('./writers/JavaScriptWriter');
@@ -32,6 +33,7 @@ const PhpWriter = require('./writers/PhpWriter');
 const PythonTomlWriter = require('./writers/PythonTomlWriter');
 const PythonSetupWriter = require('./writers/PythonSetupWriter');
 const PythonInitWriter = require('./writers/PythonInitWriter');
+const GoWriter = require('./writers/GoWriter');
 
 // Services
 const InputService = require('./services/InputService');
@@ -79,7 +81,8 @@ module.exports = {
     PhpParser,
     PythonTomlParser,
     PythonSetupParser,
-    PythonInitParser
+    PythonInitParser,
+    GoParser
   },
   
   // Writers
@@ -89,6 +92,7 @@ module.exports = {
     PhpWriter,
     PythonTomlWriter,
     PythonSetupWriter,
-    PythonInitWriter
+    PythonInitWriter,
+    GoWriter
   }
 };

@@ -131,8 +131,7 @@ class IntegrationTester {
       const filePath = path.join(__dirname, testCase.file);
       
       if (!fs.existsSync(filePath)) {
-        this.log(`Skipping ${testCase.name} - file not found: ${testCase.file}`, 'warn');
-        continue;
+        throw new Error(`Test file not found: ${testCase.file}`);
       }
 
       try {
