@@ -218,8 +218,9 @@ switch (command) {
         }
         break;
       case 'update-major':
-        // Extract major version from current version (e.g., "2.0.0" -> "2")
-        const majorVersion = version.split('.')[0];
+        // Extract major version from current version (e.g., "v2.0.1" -> "2")
+        const versionWithoutV = version.startsWith('v') ? version.slice(1) : version;
+        const majorVersion = versionWithoutV.split('.')[0];
         const majorTag = `v${majorVersion}`;
         
         console.log(`🔄 Updating ${majorTag} tag to point to ${version}...`);
