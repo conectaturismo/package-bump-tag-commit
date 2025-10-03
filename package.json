@@ -1,6 +1,6 @@
 {
   "name": "package-bump-tag-commit",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "Read version from package file, bump it, and create tag, commit",
   "author": "Sergio Garcia",
   "main": "index.js",
@@ -13,7 +13,14 @@
     "test:python": "node test-integration.js --lang=python",
     "test:js": "node test-integration.js --lang=js",
     "test:rust": "node test-integration.js --lang=rust",
-    "test:go": "node test-integration.js --lang=go"
+    "test:go": "node test-integration.js --lang=go",
+    "release:prepare": "npm run build && git add dist/ && git diff --staged --quiet || git commit -m \"build: update dist for release\"",
+    "release:tag": "git tag -a v%npm_package_version% -m \"Release v%npm_package_version%\" && git push origin v%npm_package_version%",
+    "release:update-major": "git tag -f v1 && git push -f origin v1",
+    "release:full": "npm run release:prepare && npm run release:tag && npm run release:update-major",
+    "tag:current": "echo Current version: %npm_package_version%",
+    "tag:list": "git tag -l -n1",
+    "tag:delete": "git tag -d v%npm_package_version% && git push --delete origin v%npm_package_version%"
   },
   "license": "MIT",
   "dependencies": {
