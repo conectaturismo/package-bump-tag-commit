@@ -20,6 +20,10 @@ inputs:
   path:
     description: 'The path to the package file'
     required: false
+  tagPrefix:
+    description: 'Prefix to add to the tag (e.g., project-name-)'
+    required: false
+    default: ''
 
 outputs:
   version:

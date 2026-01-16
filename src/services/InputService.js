@@ -24,6 +24,7 @@ class InputService {
     const path = core.getInput('path');
     const save = core.getBooleanInput('save') || false;
     const githubToken = core.getInput('githubToken');
+    const tagPrefix = core.getInput('tagPrefix') || '';
     const workspacePath = process.env.GITHUB_WORKSPACE || './';
 
     // Validate inputs
@@ -38,6 +39,7 @@ class InputService {
       path,
       save,
       githubToken,
+      tagPrefix,
       workspacePath
     };
 
@@ -91,6 +93,14 @@ class InputService {
    */
   getGitHubToken() {
     return core.getInput('githubToken') || null;
+  }
+
+  /**
+   * Get tag prefix
+   * @returns {string} Tag prefix
+   */
+  getTagPrefix() {
+    return core.getInput('tagPrefix') || '';
   }
 
   /**

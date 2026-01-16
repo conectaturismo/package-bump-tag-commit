@@ -5,22 +5,24 @@ const { exec } = require('@actions/exec');
  * Service for handling Git operations (tagging and committing)
  */
 class GitService {
-  constructor(githubToken) {
+  constructor(githubToken, tagPrefix = '') {
     this.octokit = github.getOctokit(githubToken);
     this.githubToken = githubToken;
+    this.tagPrefix = tagPrefix;
   }
 
   /**
    * Create Git service instance from GitHub token
    * @param {string} githubToken - GitHub token for authentication
+   * @param {string} tagPrefix - Prefix to add to tags
    * @returns {GitService} New GitService instance
    * @throws {Error} If token is missing
    */
-  static fromToken(githubToken) {
+  static fromToken(githubToken, tagPrefix = '') {
     if (!githubToken) {
       throw new Error('GitHub token is required for Git operations');
     }
-    return new GitService(githubToken);
+    return new GitService(githubToken, tagPrefix);
   }
 
   /**
@@ -62,7 +64,7 @@ class GitService {
   async _createTag(version) {
     const tagRsp = await this.octokit.rest.repos.createRelease({
       ...github.context.repo,
-      tag_name: `v${version}`,
+      tag_name: `${this.tagPrefix}v${version}`,
     });
 
     if (tagRsp.status !== 201) {
@@ -78,7 +80,7 @@ class GitService {
    */
   async _commit() {
     const branch = github.context.ref.split('/').slice(2).join('/');
-    
+
     await exec('git', ['add', '-A']);
     await exec('git', ['config', '--local', 'user.name', 'Conecta Turismo CI']);
     await exec('git', ['config', '--local', 'user.email', 'sergio.garcia.seo@gmail.com']);

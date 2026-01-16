@@ -21,13 +21,13 @@ class ActionOrchestrator {
     try {
       // Parse and validate inputs
       const inputs = this.inputService.parseInputs();
-      
+
       OutputService.logDebug(`Inputs parsed: ${JSON.stringify(inputs, null, 2)}`);
 
       // Resolve target file path
       const filePath = PathResolverService.resolveFilePath(
-        inputs.lang, 
-        inputs.workspacePath, 
+        inputs.lang,
+        inputs.workspacePath,
         inputs.path
       );
 
@@ -36,7 +36,7 @@ class ActionOrchestrator {
       // Load and bump version
       const packageVersion = PackageVersion.fromFile(filePath, inputs.lang);
       const oldVersion = packageVersion.getCurrentVersion();
-      
+
       packageVersion.bump(inputs.bumpLvl);
       const newVersion = packageVersion.getCurrentVersion();
 
@@ -75,10 +75,10 @@ class ActionOrchestrator {
 
       // Handle Git operations if token provided
       if (inputs.githubToken) {
-        const gitService = GitService.fromToken(inputs.githubToken);
+        const gitService = GitService.fromToken(inputs.githubToken, inputs.tagPrefix);
         await gitService.createTagAndCommit(packageVersion.getCurrentVersion());
         OutputService.logGitOperations(
-          packageVersion.getCurrentVersion(), 
+          packageVersion.getCurrentVersion(),
           true, // tagged
           true  // committed
         );
@@ -99,7 +99,7 @@ class ActionOrchestrator {
   async executeWithInputs(customInputs) {
     // Override environment variables for testing
     const originalEnv = { ...process.env };
-    
+
     try {
       if (customInputs.workspacePath) {
         process.env.GITHUB_WORKSPACE = customInputs.workspacePath;
@@ -108,7 +108,7 @@ class ActionOrchestrator {
       // Mock core inputs
       const originalGetInput = require('@actions/core').getInput;
       const originalGetBooleanInput = require('@actions/core').getBooleanInput;
-      
+
       require('@actions/core').getInput = (name) => customInputs[name] || '';
       require('@actions/core').getBooleanInput = (name) => customInputs[name] || false;
 
@@ -130,13 +130,13 @@ class ActionOrchestrator {
    * @returns {Promise<object>} Dry run results
    */
   async getDryRunResults(customInputs = {}) {
-    const inputs = customInputs.workspacePath ? 
-      customInputs : 
+    const inputs = customInputs.workspacePath ?
+      customInputs :
       this.inputService.parseInputs();
 
     const filePath = PathResolverService.resolveFilePath(
-      inputs.lang || 'js', 
-      inputs.workspacePath || './', 
+      inputs.lang || 'js',
+      inputs.workspacePath || './',
       inputs.path
     );
 
