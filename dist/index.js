@@ -36016,13 +36016,13 @@ class ActionOrchestrator {
     try {
       // Parse and validate inputs
       const inputs = this.inputService.parseInputs();
-      
+
       OutputService.logDebug(`Inputs parsed: ${JSON.stringify(inputs, null, 2)}`);
 
       // Resolve target file path
       const filePath = PathResolverService.resolveFilePath(
-        inputs.lang, 
-        inputs.workspacePath, 
+        inputs.lang,
+        inputs.workspacePath,
         inputs.path
       );
 
@@ -36031,7 +36031,7 @@ class ActionOrchestrator {
       // Load and bump version
       const packageVersion = PackageVersion.fromFile(filePath, inputs.lang);
       const oldVersion = packageVersion.getCurrentVersion();
-      
+
       packageVersion.bump(inputs.bumpLvl);
       const newVersion = packageVersion.getCurrentVersion();
 
@@ -36070,10 +36070,10 @@ class ActionOrchestrator {
 
       // Handle Git operations if token provided
       if (inputs.githubToken) {
-        const gitService = GitService.fromToken(inputs.githubToken);
+        const gitService = GitService.fromToken(inputs.githubToken, inputs.tagPrefix);
         await gitService.createTagAndCommit(packageVersion.getCurrentVersion());
         OutputService.logGitOperations(
-          packageVersion.getCurrentVersion(), 
+          packageVersion.getCurrentVersion(),
           true, // tagged
           true  // committed
         );
@@ -36094,7 +36094,7 @@ class ActionOrchestrator {
   async executeWithInputs(customInputs) {
     // Override environment variables for testing
     const originalEnv = { ...process.env };
-    
+
     try {
       if (customInputs.workspacePath) {
         process.env.GITHUB_WORKSPACE = customInputs.workspacePath;
@@ -36103,7 +36103,7 @@ class ActionOrchestrator {
       // Mock core inputs
       const originalGetInput = (__nccwpck_require__(7484).getInput);
       const originalGetBooleanInput = (__nccwpck_require__(7484).getBooleanInput);
-      
+
       (__nccwpck_require__(7484).getInput) = (name) => customInputs[name] || '';
       (__nccwpck_require__(7484).getBooleanInput) = (name) => customInputs[name] || false;
 
@@ -36125,13 +36125,13 @@ class ActionOrchestrator {
    * @returns {Promise<object>} Dry run results
    */
   async getDryRunResults(customInputs = {}) {
-    const inputs = customInputs.workspacePath ? 
-      customInputs : 
+    const inputs = customInputs.workspacePath ?
+      customInputs :
       this.inputService.parseInputs();
 
     const filePath = PathResolverService.resolveFilePath(
-      inputs.lang || 'js', 
-      inputs.workspacePath || './', 
+      inputs.lang || 'js',
+      inputs.workspacePath || './',
       inputs.path
     );
 
@@ -37093,22 +37093,24 @@ const { exec } = __nccwpck_require__(5236);
  * Service for handling Git operations (tagging and committing)
  */
 class GitService {
-  constructor(githubToken) {
+  constructor(githubToken, tagPrefix = '') {
     this.octokit = github.getOctokit(githubToken);
     this.githubToken = githubToken;
+    this.tagPrefix = tagPrefix;
   }
 
   /**
    * Create Git service instance from GitHub token
    * @param {string} githubToken - GitHub token for authentication
+   * @param {string} tagPrefix - Prefix to add to tags
    * @returns {GitService} New GitService instance
    * @throws {Error} If token is missing
    */
-  static fromToken(githubToken) {
+  static fromToken(githubToken, tagPrefix = '') {
     if (!githubToken) {
       throw new Error('GitHub token is required for Git operations');
     }
-    return new GitService(githubToken);
+    return new GitService(githubToken, tagPrefix);
   }
 
   /**
@@ -37150,7 +37152,7 @@ class GitService {
   async _createTag(version) {
     const tagRsp = await this.octokit.rest.repos.createRelease({
       ...github.context.repo,
-      tag_name: `v${version}`,
+      tag_name: `${this.tagPrefix}v${version}`,
     });
 
     if (tagRsp.status !== 201) {
@@ -37166,7 +37168,7 @@ class GitService {
    */
   async _commit() {
     const branch = github.context.ref.split('/').slice(2).join('/');
-    
+
     await exec('git', ['add', '-A']);
     await exec('git', ['config', '--local', 'user.name', 'Conecta Turismo CI']);
     await exec('git', ['config', '--local', 'user.email', 'sergio.garcia.seo@gmail.com']);
@@ -37229,6 +37231,7 @@ class InputService {
     const path = core.getInput('path');
     const save = core.getBooleanInput('save') || false;
     const githubToken = core.getInput('githubToken');
+    const tagPrefix = core.getInput('tagPrefix') || '';
     const workspacePath = process.env.GITHUB_WORKSPACE || './';
 
     // Validate inputs
@@ -37243,6 +37246,7 @@ class InputService {
       path,
       save,
       githubToken,
+      tagPrefix,
       workspacePath
     };
 
@@ -37296,6 +37300,14 @@ class InputService {
    */
   getGitHubToken() {
     return core.getInput('githubToken') || null;
+  }
+
+  /**
+   * Get tag prefix
+   * @returns {string} Tag prefix
+   */
+  getTagPrefix() {
+    return core.getInput('tagPrefix') || '';
   }
 
   /**
