@@ -27,14 +27,26 @@ class GitService {
 
   /**
    * Create tag and commit for the new version
+   *
+   * El commit va PRIMERO y la etiqueta despues, apuntando al commit recien
+   * subido. Al reves —como estaba hasta la 2.1.1— la etiqueta y su release se
+   * creaban sobre la cabeza de la rama, o sea sobre el commit ANTERIOR al de la
+   * version: `v0.0.98` llevaba dentro un `package.json` que decia `0.0.97`.
+   * Medido en ct-twf-library, pasaba en las cinco ultimas versiones, tanto en
+   * las publicaciones buenas como en las que fallaban.
+   *
+   * Y si el push fallaba (pasó el 2026-11-04, con GitHub devolviendo 500 en los
+   * pushes), la etiqueta y la release ya existian sin paquete detras, asi que el
+   * siguiente intento chocaba con ellas y habia que borrarlas a mano.
+   *
    * @param {string} version - Version to tag
    * @returns {Promise<void>}
    * @throws {Error} If Git operations fail
    */
   async createTagAndCommit(version) {
     try {
-      await this._createTag(version);
-      await this._commit();
+      const sha = await this._commit();
+      await this._createTag(version, sha);
     } catch (error) {
       throw new Error(`Git operations failed: ${error.message}`);
     }
@@ -48,7 +60,11 @@ class GitService {
    */
   async createTag(version) {
     try {
-      await this._createTag(version);
+      // Sin commit no hay sha nuevo, asi que se etiqueta el commit sobre el que
+      // corre el workflow. Omitir el destino lo dejaba en manos de GitHub, que
+      // etiqueta la rama POR DEFECTO del repositorio: publicando desde `develop`
+      // en un repo cuya rama por defecto es `main`, la etiqueta se iba a main.
+      await this._createTag(version, github.context.sha);
     } catch (error) {
       throw new Error(`Tag creation failed: ${error.message}`);
     }
@@ -58,13 +74,17 @@ class GitService {
    * Internal method to create a Git tag via GitHub API
    * @private
    * @param {string} version - Version to tag
+   * @param {string} [targetCommitish] - Commit al que apunta la etiqueta. Sin
+   *   el, GitHub la cuelga de la rama por defecto del repositorio, que no tiene
+   *   por que ser la que publica.
    * @returns {Promise<void>}
    * @throws {Error} If tag creation fails
    */
-  async _createTag(version) {
+  async _createTag(version, targetCommitish) {
     const tagRsp = await this.octokit.rest.repos.createRelease({
       ...github.context.repo,
       tag_name: `${this.tagPrefix}v${version}`,
+      ...(targetCommitish ? { target_commitish: targetCommitish } : {}),
     });
 
     if (tagRsp.status !== 201) {
@@ -75,7 +95,7 @@ class GitService {
   /**
    * Internal method to commit changes
    * @private
-   * @returns {Promise<void>}
+   * @returns {Promise<string>} SHA del commit recien subido, para etiquetarlo
    * @throws {Error} If commit fails
    */
   async _commit() {
@@ -86,6 +106,14 @@ class GitService {
     await exec('git', ['config', '--local', 'user.email', 'sergio.garcia.seo@gmail.com']);
     await exec('git', ['commit', '--no-verify', '-m', 'CI: Publish new version']);
     await exec('git', ['push', 'origin', branch]);
+
+    // Se lee DESPUES del push: si el push falla no se llega aqui y no se crea
+    // ninguna etiqueta, que es justo lo que se busca.
+    let sha = '';
+    await exec('git', ['rev-parse', 'HEAD'], {
+      listeners: { stdout: data => { sha += data.toString(); } },
+    });
+    return sha.trim();
   }
 
   /**

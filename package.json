@@ -1,6 +1,6 @@
 {
   "name": "package-bump-tag-commit",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "Read version from package file, bump it, and create tag, commit",
   "author": "Sergio Garcia",
   "main": "index.js",
