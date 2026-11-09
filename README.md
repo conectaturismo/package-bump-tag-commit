@@ -61,6 +61,12 @@ A modern, extensible GitHub Action built with SOLID principles that reads versio
 | `githubToken` | GitHub token for commits/tags | - | `${{ secrets.GITHUB_TOKEN }}` |
 | `path` | Path to package file | *auto-detected* | Any valid file path |
 
+### What gets committed with `save: true`
+
+Only the version file (`path`, or the auto-detected package file) goes into the `CI: Publish new version` commit. Anything else in the workspace is left out, even if it is untracked, modified or already staged by a previous step: credential files such as the `gha-creds-*.json` written by `google-github-actions/auth`, generated `.env` files, build output, etc.
+
+The commit is pushed first, and the tag/release is then created on that exact commit.
+
 ## 📤 Outputs
 
 | Output | Description | Example |
@@ -361,6 +367,10 @@ npm run test:js      # JavaScript only
 npm run test:rust    # Rust only  
 npm run test:php     # PHP only
 npm run test:python  # Python only
+
+# Git flow with save=true (local remote + fake GitHub API, no network)
+npm run test:git     # source (index.js)
+npm run test:dist    # published bundle (dist/index.js) — run after `npm run build`
 ```
 
 ### Test Coverage
