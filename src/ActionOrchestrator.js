@@ -76,7 +76,7 @@ class ActionOrchestrator {
       // Handle Git operations if token provided
       if (inputs.githubToken) {
         const gitService = GitService.fromToken(inputs.githubToken, inputs.tagPrefix);
-        await gitService.createTagAndCommit(packageVersion.getCurrentVersion());
+        await gitService.createTagAndCommit(packageVersion.getCurrentVersion(), filePath);
         OutputService.logGitOperations(
           packageVersion.getCurrentVersion(),
           true, // tagged

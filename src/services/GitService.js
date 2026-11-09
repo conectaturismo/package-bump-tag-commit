@@ -40,12 +40,13 @@ class GitService {
    * siguiente intento chocaba con ellas y habia que borrarlas a mano.
    *
    * @param {string} version - Version to tag
+   * @param {string} filePath - Fichero de version: es lo UNICO que entra en el commit
    * @returns {Promise<void>}
    * @throws {Error} If Git operations fail
    */
-  async createTagAndCommit(version) {
+  async createTagAndCommit(version, filePath) {
     try {
-      const sha = await this._commit();
+      const sha = await this._commit(filePath);
       await this._createTag(version, sha);
     } catch (error) {
       throw new Error(`Git operations failed: ${error.message}`);
@@ -94,17 +95,30 @@ class GitService {
 
   /**
    * Internal method to commit changes
+   *
+   * Solo entra en el commit el fichero de version. Antes se hacia `git add -A`
+   * y el commit se llevaba todo lo que hubiera en el workspace: ficheros de
+   * credenciales como el `gha-creds-*.json` que deja
+   * google-github-actions/auth, `.env` generados en el build o cambios de
+   * pasos anteriores. `commit -- <fichero>` ademas deja fuera lo que otro paso
+   * hubiera preparado ya en el indice.
+   *
    * @private
+   * @param {string} filePath - Fichero de version
    * @returns {Promise<string>} SHA del commit recien subido, para etiquetarlo
    * @throws {Error} If commit fails
    */
-  async _commit() {
+  async _commit(filePath) {
+    if (!filePath) {
+      // Sin fichero no se hace commit: nunca volver a un `git add` de todo.
+      throw new Error('Version file path is required to commit');
+    }
     const branch = github.context.ref.split('/').slice(2).join('/');
 
-    await exec('git', ['add', '-A']);
+    await exec('git', ['add', '--', filePath]);
     await exec('git', ['config', '--local', 'user.name', 'Conecta Turismo CI']);
     await exec('git', ['config', '--local', 'user.email', 'sergio.garcia.seo@gmail.com']);
-    await exec('git', ['commit', '--no-verify', '-m', 'CI: Publish new version']);
+    await exec('git', ['commit', '--no-verify', '-m', 'CI: Publish new version', '--', filePath]);
     await exec('git', ['push', 'origin', branch]);
 
     // Se lee DESPUES del push: si el push falla no se llega aqui y no se crea
@@ -118,12 +132,13 @@ class GitService {
 
   /**
    * Commit changes only (without tagging)
+   * @param {string} filePath - Fichero de version
    * @returns {Promise<void>}
    * @throws {Error} If commit fails
    */
-  async commit() {
+  async commit(filePath) {
     try {
-      await this._commit();
+      await this._commit(filePath);
     } catch (error) {
       throw new Error(`Commit failed: ${error.message}`);
     }
